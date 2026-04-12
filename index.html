@@ -131,10 +131,18 @@
 
   /* FOOD CHECKLIST */
   .food-chip-grid{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;}
-  .food-chip{font-family:'DM Sans',sans-serif;font-size:12px;padding:7px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px;}
-  .food-chip:hover{border-color:var(--accent);color:var(--text);}
-  .food-chip.selected{background:#1a1f0e;border-color:var(--accent);color:var(--accent);}
+  .food-chip{font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 6px 5px 11px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);transition:all .15s;display:flex;align-items:center;gap:4px;}
+  .food-chip.active{background:#1a1f0e;border-color:var(--accent);color:var(--accent);}
   .food-chip .chip-kcal{font-family:'DM Mono',monospace;font-size:9px;opacity:.7;}
+  .chip-label{cursor:pointer;display:flex;align-items:center;gap:4px;}
+  .chip-label:hover{color:var(--text);}
+  .food-chip.active .chip-label:hover{color:var(--accent);}
+  .chip-qty{display:flex;align-items:center;gap:2px;margin-left:2px;}
+  .chip-qty-btn{width:18px;height:18px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:14px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:all .15s;flex-shrink:0;}
+  .chip-qty-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .food-chip.active .chip-qty-btn{border-color:var(--accent);color:var(--accent);}
+  .chip-qty-val{font-family:'DM Mono',monospace;font-size:10px;min-width:24px;text-align:center;color:var(--muted);}
+  .food-chip.active .chip-qty-val{color:var(--accent);}
   .chip-section-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;width:100%;margin-top:4px;margin-bottom:2px;}
 
   /* MODAL */
@@ -650,10 +658,12 @@ const FOOD_ITEMS = [
   {section:'🌾 Carbs'},
   {name:'80g oats (dry)',          kcal:304, p:10, c:56, f:5 },
   {name:'150g brown rice (cooked)',kcal:163, p:4,  c:35, f:2 },
+  {name:'150g white rice (cooked)',kcal:195, p:4,  c:43, f:0 },
   {name:'150g pasta (cooked)',     kcal:220, p:8,  c:44, f:1 },
   {name:'150g quinoa (cooked)',    kcal:180, p:7,  c:32, f:3 },
   {name:'200g sweet potato',       kcal:172, p:3,  c:38, f:0 },
-  {name:'1 slice whole grain + hummus', kcal:130, p:6, c:20, f:5},
+  {name:'1 slice whole grain bread',kcal:80, p:3,  c:14, f:1 },
+  {name:'30g hummus',              kcal:55,  p:2,  c:4,  f:3 },
   {name:'1 banana',                kcal:105, p:1,  c:27, f:0 },
   {name:'1 apple',                 kcal:81,  p:0,  c:21, f:0 },
   {name:'Handful of dates (~30g)', kcal:83,  p:0,  c:22, f:0 },
@@ -666,6 +676,7 @@ const FOOD_ITEMS = [
   {section:'🥛 Dairy & Extras'},
   {name:'Whey protein shake',      kcal:120, p:25, c:3,  f:2 },
   {name:'250ml whole milk',        kcal:162, p:8,  c:12, f:9 },
+  {name:'250ml oat milk',          kcal:120, p:3,  c:20, f:5 },
   {name:'Coffee (black)',          kcal:5,   p:0,  c:1,  f:0 },
   {name:'500ml water',             kcal:0,   p:0,  c:0,  f:0 },
 ];
@@ -836,7 +847,13 @@ function renderNutTracker(){
   '</div>';
 }
 
-// Build food chip grid
+// Return portion info for gram/ml items (e.g. "180g chicken breast" → {base:180,unit:'g'})
+function getItemPortionInfo(item){
+  const m=item.name.match(/^(\d+)(g|ml)\s/);
+  return m ? {base:parseInt(m[1]),unit:m[2]} : null;
+}
+
+// Build food chip grid with -/+ quantity controls
 function buildFoodChips(){
   const grid=document.getElementById('foodChipGrid');
   grid.innerHTML='';
@@ -845,19 +862,40 @@ function buildFoodChips(){
       const lbl=document.createElement('div'); lbl.className='chip-section-label'; lbl.textContent=item.section;
       grid.appendChild(lbl); return;
     }
+    const portionInfo=getItemPortionInfo(item);
+    let qty=0;
+
     const chip=document.createElement('div'); chip.className='food-chip';
-    chip.innerHTML=`${item.name} <span class="chip-kcal">${item.kcal}kcal</span>`;
-    chip.onclick=()=>{
-      chip.classList.toggle('selected');
-      // Fill manual fields if only one selected
-      const sel=document.querySelectorAll('.food-chip.selected');
-      if(sel.length===1){
-        const fi=FOOD_ITEMS.find(f=>f.name===item.name);
-        if(fi){ document.getElementById('nutNameInput').value=fi.name; document.getElementById('nutKcalInput').value=fi.kcal; document.getElementById('nutProtInput').value=fi.p; document.getElementById('nutCarbInput').value=fi.c; document.getElementById('nutFatInput').value=fi.f; }
-      } else if(sel.length===0){
-        document.getElementById('nutNameInput').value=''; document.getElementById('nutKcalInput').value=''; document.getElementById('nutProtInput').value=''; document.getElementById('nutCarbInput').value=''; document.getElementById('nutFatInput').value='';
+    chip.dataset.itemName=item.name;
+
+    // Label (clickable to toggle qty 0↔1)
+    const label=document.createElement('span'); label.className='chip-label';
+    label.innerHTML=`${item.name} <span class="chip-kcal">${item.kcal}kcal</span>`;
+
+    // Qty controls
+    const qtyCtrl=document.createElement('div'); qtyCtrl.className='chip-qty';
+    const minusBtn=document.createElement('button'); minusBtn.className='chip-qty-btn'; minusBtn.type='button'; minusBtn.textContent='−';
+    const qtyVal=document.createElement('span'); qtyVal.className='chip-qty-val';
+    const plusBtn=document.createElement('button'); plusBtn.className='chip-qty-btn'; plusBtn.type='button'; plusBtn.textContent='+';
+    qtyCtrl.append(minusBtn,qtyVal,plusBtn);
+    chip.append(label,qtyCtrl);
+
+    function updateDisplay(){
+      if(qty>0){
+        chip.classList.add('active');
+        qtyVal.textContent=portionInfo ? (portionInfo.base*qty)+portionInfo.unit : '×'+qty;
+      } else {
+        chip.classList.remove('active');
+        qtyVal.textContent='';
       }
-    };
+    }
+
+    plusBtn.onclick=e=>{ e.stopPropagation(); qty++; updateDisplay(); };
+    minusBtn.onclick=e=>{ e.stopPropagation(); if(qty>0) qty--; updateDisplay(); };
+    label.onclick=()=>{ qty=qty>0?0:1; updateDisplay(); };
+
+    chip.getQty=()=>qty;
+    updateDisplay();
     grid.appendChild(chip);
   });
 }
@@ -875,31 +913,48 @@ function openNutModal(){
 function closeNutModal(){ document.getElementById('nutModal').classList.remove('open'); }
 
 function saveNutEntry(){
-  // Check if multiple chips selected — batch add
-  const selected=document.querySelectorAll('.food-chip.selected');
   const today=todayStr();
   if(!nutLogs[today]) nutLogs[today]=[];
+  let addedCount=0;
 
-  if(selected.length>1){
-    selected.forEach(chip=>{
-      const fname=chip.childNodes[0].textContent.trim();
-      const fi=FOOD_ITEMS.find(f=>f.name===fname);
-      if(fi) nutLogs[today].push({name:fi.name,id:Date.now()+Math.random(),kcal:fi.kcal,prot:fi.p,carb:fi.c,fat:fi.f});
-    });
-    showToast(selected.length+' items added ✓');
-  } else {
-    const name=document.getElementById('nutNameInput').value.trim()||'Food';
+  // Add all chips with qty > 0
+  document.querySelectorAll('#foodChipGrid .food-chip').forEach(chip=>{
+    const qty=chip.getQty?chip.getQty():0;
+    if(qty<=0) return;
+    const fi=FOOD_ITEMS.find(f=>f.name===chip.dataset.itemName);
+    if(!fi) return;
+    const portionInfo=getItemPortionInfo(fi);
+    let logName=fi.name;
+    if(qty>1){
+      if(portionInfo){
+        // e.g. "180g chicken breast" × 2 → "360g chicken breast"
+        logName=fi.name.replace(/^\d+(g|ml)\s/,(portionInfo.base*qty)+portionInfo.unit+' ');
+      } else {
+        logName=qty+'× '+fi.name;
+      }
+    }
+    nutLogs[today].push({name:logName,id:Date.now()+Math.random(),kcal:Math.round(fi.kcal*qty),prot:Math.round(fi.p*qty*10)/10,carb:Math.round(fi.c*qty*10)/10,fat:Math.round(fi.f*qty*10)/10});
+    addedCount++;
+  });
+
+  // Also add manual entry if a name was provided
+  const manualName=document.getElementById('nutNameInput').value.trim();
+  if(manualName){
     nutLogs[today].push({
-      name, id:Date.now(),
+      name:manualName, id:Date.now(),
       kcal:parseFloat(document.getElementById('nutKcalInput').value)||0,
       prot:parseFloat(document.getElementById('nutProtInput').value)||0,
       carb:parseFloat(document.getElementById('nutCarbInput').value)||0,
       fat:parseFloat(document.getElementById('nutFatInput').value)||0,
     });
-    showToast(name+' added ✓');
+    addedCount++;
   }
-  save('nut',nutLogs);
-  closeNutModal(); renderNutTracker();
+
+  if(addedCount>0){
+    showToast(addedCount===1?'1 item added ✓':addedCount+' items added ✓');
+    save('nut',nutLogs);
+    closeNutModal(); renderNutTracker();
+  }
 }
 
 function delNutEntry(idx){
