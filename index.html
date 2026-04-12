@@ -127,7 +127,7 @@
   .nut-entry-row:last-child{border-bottom:none;}
   .nut-entry-macros{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-align:right;}
   .nut-del-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 4px;flex-shrink:0;}
-  .nut-del-btn:hover{color:var(--danger);}
+  .nut-del-btn:active{color:var(--danger);}
 
   /* FOOD CHECKLIST */
   .food-chip-grid{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;}
@@ -864,16 +864,6 @@ function updateChipTotals(){
     return;
   }
   const tot=active.reduce((a,{fi,qty})=>({kcal:a.kcal+fi.kcal*qty,p:a.p+fi.p*qty,c:a.c+fi.c*qty,f:a.f+fi.f*qty}),{kcal:0,p:0,c:0,f:0});
-  if(active.length===1){
-    const {fi,qty}=active[0];
-    const pi=getItemPortionInfo(fi);
-    let displayName=fi.name;
-    if(qty>1){
-      if(pi) displayName=fi.name.replace(/^\d+(g|ml)\s/,(pi.base*qty)+pi.unit+' ');
-      else displayName=qty+'× '+fi.name.replace(/^\d+\s+/,'');
-    }
-    document.getElementById('nutNameInput').value=displayName;
-  }
   document.getElementById('nutKcalInput').value=Math.round(tot.kcal);
   document.getElementById('nutProtInput').value=Math.round(tot.p*10)/10;
   document.getElementById('nutCarbInput').value=Math.round(tot.c*10)/10;
