@@ -427,11 +427,11 @@
   <div class="meal-card">
     <div class="meal-header" onclick="toggleMeal(this)"><div><div class="meal-time">07:00 · BREAKFAST</div><div class="meal-name">High-Protein Morning</div></div><div style="display:flex;align-items:center;"><span class="meal-cals">~620 kcal</span><span class="chevron meal-chevron" style="color:var(--muted)">▾</span></div></div>
     <div class="meal-body">
-      <div class="food-item"><span class="food-name">3 whole eggs + 3 egg whites, scrambled</span><span class="food-macros">28g P · 2g C · 14g F</span></div>
+      <div class="food-item"><span class="food-name">3 whole eggs, scrambled</span><span class="food-macros">18g P · 0g C · 15g F</span></div>
       <div class="food-item"><span class="food-name">80g oats (dry weight) with water</span><span class="food-macros">10g P · 56g C · 5g F</span></div>
       <div class="food-item"><span class="food-name">150g Greek yogurt (full-fat)</span><span class="food-macros">11g P · 6g C · 5g F</span></div>
       <div class="food-item"><span class="food-name">1 banana</span><span class="food-macros">1g P · 27g C · 0g F</span></div>
-      <div class="food-total">Total: ~50g protein · 91g carbs · 24g fat</div>
+      <div class="food-total">Total: ~40g protein · 89g carbs · 25g fat</div>
     </div>
   </div>
   <div class="meal-card">
@@ -646,8 +646,7 @@ const DAYS = {
 // Individual food items from the plan — each is a selectable chip
 const FOOD_ITEMS = [
   {section:'🥚 Protein'},
-  {name:'3 eggs + 3 whites',       kcal:200, p:28, c:2,  f:14},
-  {name:'3 whole eggs',            kcal:216, p:18, c:1,  f:15},
+  {name:'1 egg',                   kcal:72,  p:6,  c:0,  f:5  },
   {name:'180g chicken breast',     kcal:198, p:42, c:0,  f:4 },
   {name:'200g salmon',             kcal:412, p:40, c:0,  f:14},
   {name:'200g lean beef mince',    kcal:340, p:40, c:0,  f:18},
@@ -847,6 +846,40 @@ function renderNutTracker(){
   '</div>';
 }
 
+// Update manual entry fields to reflect the sum of all active chips
+function updateChipTotals(){
+  const active=[];
+  document.querySelectorAll('#foodChipGrid .food-chip').forEach(chip=>{
+    const qty=chip.getQty?chip.getQty():0;
+    if(qty<=0) return;
+    const fi=FOOD_ITEMS.find(f=>f.name===chip.dataset.itemName);
+    if(fi) active.push({fi,qty});
+  });
+  if(active.length===0){
+    document.getElementById('nutNameInput').value='';
+    document.getElementById('nutKcalInput').value='';
+    document.getElementById('nutProtInput').value='';
+    document.getElementById('nutCarbInput').value='';
+    document.getElementById('nutFatInput').value='';
+    return;
+  }
+  const tot=active.reduce((a,{fi,qty})=>({kcal:a.kcal+fi.kcal*qty,p:a.p+fi.p*qty,c:a.c+fi.c*qty,f:a.f+fi.f*qty}),{kcal:0,p:0,c:0,f:0});
+  if(active.length===1){
+    const {fi,qty}=active[0];
+    const pi=getItemPortionInfo(fi);
+    let displayName=fi.name;
+    if(qty>1){
+      if(pi) displayName=fi.name.replace(/^\d+(g|ml)\s/,(pi.base*qty)+pi.unit+' ');
+      else displayName=qty+'× '+fi.name.replace(/^\d+\s+/,'');
+    }
+    document.getElementById('nutNameInput').value=displayName;
+  }
+  document.getElementById('nutKcalInput').value=Math.round(tot.kcal);
+  document.getElementById('nutProtInput').value=Math.round(tot.p*10)/10;
+  document.getElementById('nutCarbInput').value=Math.round(tot.c*10)/10;
+  document.getElementById('nutFatInput').value=Math.round(tot.f*10)/10;
+}
+
 // Return portion info for gram/ml items (e.g. "180g chicken breast" → {base:180,unit:'g'})
 function getItemPortionInfo(item){
   const m=item.name.match(/^(\d+)(g|ml)\s/);
@@ -888,6 +921,7 @@ function buildFoodChips(){
         chip.classList.remove('active');
         qtyVal.textContent='';
       }
+      updateChipTotals();
     }
 
     plusBtn.onclick=e=>{ e.stopPropagation(); qty++; updateDisplay(); };
@@ -930,7 +964,7 @@ function saveNutEntry(){
         // e.g. "180g chicken breast" × 2 → "360g chicken breast"
         logName=fi.name.replace(/^\d+(g|ml)\s/,(portionInfo.base*qty)+portionInfo.unit+' ');
       } else {
-        logName=qty+'× '+fi.name;
+        logName=qty+'× '+fi.name.replace(/^\d+\s+/,'');
       }
     }
     nutLogs[today].push({name:logName,id:Date.now()+Math.random(),kcal:Math.round(fi.kcal*qty),prot:Math.round(fi.p*qty*10)/10,carb:Math.round(fi.c*qty*10)/10,fat:Math.round(fi.f*qty*10)/10});
