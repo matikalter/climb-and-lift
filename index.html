@@ -319,6 +319,7 @@
       <div class="exercise"><div><div class="ex-name">Pallof Press (cable or resistance band)</div><div class="ex-note">Anti-rotation. Targets deep core and obliques directly. Attach band to rack or cable to side.</div></div><div class="ex-sets">2 × 10/side</div></div>
       <div class="exercise"><div><div class="ex-name">Hanging Leg Raise</div><div class="ex-note">On pull-up bar. Slow and controlled — no swinging. Tuck knees first if straight legs are too hard.</div></div><div class="ex-sets">2 × 10–15</div></div>
       <button class="log-btn" onclick="openLogModal('A')">+ LOG THIS SESSION</button>
+      <div id="todaySession-A"></div>
     </div>
   </div>
 
@@ -339,6 +340,7 @@
       <div class="phase-label">Calves</div>
       <div class="exercise"><div><div class="ex-name">Seated Calf Raise (dumbbell on knee)</div><div class="ex-note">Sit on a bench, dumbbell on your knee, toes on a plate edge for range. Bent knee isolates the soleus — the deeper calf muscle that adds lower thickness. Heavy and slow.</div><button class="timer-btn" onclick="openTimer(90)">⏱ 1:30 rest</button></div><div class="ex-sets">4 × 12–15</div></div>
       <button class="log-btn" onclick="openLogModal('B')">+ LOG THIS SESSION</button>
+      <div id="todaySession-B"></div>
     </div>
   </div>
 
@@ -357,6 +359,7 @@
       <div class="exercise"><div><div class="ex-name">Incline Dumbbell Curl</div><div class="ex-note">Long-head bicep emphasis. Let the arm hang back fully — the stretch at the bottom is where growth happens. Climbers have short-head bias from pulling.</div><button class="timer-btn" onclick="openTimer(60)">⏱ 1:00 rest</button></div><div class="ex-sets">3 × 10–12</div></div>
       <div class="exercise"><div><div class="ex-name">Barbell Hip Thrust (or Dumbbell Glute Bridge)</div><div class="ex-note">Bench + barbell across hips. Or use a heavy dumbbell on your pelvis for a floor glute bridge. Completes the posterior chain that deadlifts miss at the top.</div><button class="timer-btn" onclick="openTimer(90)">⏱ 1:30 rest</button></div><div class="ex-sets">3 × 10–12</div></div>
       <button class="log-btn" onclick="openLogModal('C')">+ LOG THIS SESSION</button>
+      <div id="todaySession-C"></div>
     </div>
   </div>
 
@@ -505,10 +508,6 @@
   </div>
   <div class="calendar-grid" id="calendarGrid"></div>
   <div id="selectedDayLog"></div>
-  <div style="margin-top:20px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;margin-bottom:12px;color:var(--text);">All Sessions</div>
-    <div id="allLogsContainer"></div>
-  </div>
 </div>
 
 <!-- ══════════════ INFO ══════════════ -->
@@ -737,6 +736,7 @@ function showTab(id,el){
   if(id==='logview') renderCalendar();
   if(id==='bodyweight') renderBwList();
   if(id==='nutrition'){ updateTargetDisplays(); renderNutTracker(); }
+  if(id==='training') renderTodayTrainingSessions();
 }
 function showInfoTab(){
   showTab('principles', null);
@@ -809,7 +809,7 @@ function saveSession(){
   const idx=workoutLogs.findIndex(l=>l.date===today&&l.day===curDay);
   if(idx>=0) workoutLogs[idx]=entry; else workoutLogs.push(entry);
   save('logs',workoutLogs);
-  closeLogModal(); renderCalendar();
+  closeLogModal(); renderCalendar(); renderTodayTrainingSessions();
   showToast('Session saved ✓');
 }
 
@@ -1020,7 +1020,6 @@ function renderCalendar(){
     el.onclick=()=>showDayLog(ds);
     grid.appendChild(el);
   }
-  renderAllLogs();
 }
 
 function showDayLog(ds){
@@ -1046,23 +1045,33 @@ function showDayLog(ds){
   c.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
-function renderAllLogs(){
-  const c=document.getElementById('allLogsContainer');
-  if(!workoutLogs.length){c.innerHTML='<div class="empty-state"><span class="big">0</span>No sessions logged yet.<br>Tap "Log This Session" after a workout.</div>';return;}
-  c.innerHTML=[...workoutLogs].reverse().map(log=>`
-    <div class="log-entry">
+function delLog(date,day){
+  workoutLogs=workoutLogs.filter(l=>!(l.date===date&&l.day===day));
+  save('logs',workoutLogs); renderCalendar(); renderTodayTrainingSessions();
+}
+
+function renderTodayTrainingSessions(){
+  const today=todayStr();
+  ['A','B','C'].forEach(day=>{
+    const cont=document.getElementById('todaySession-'+day);
+    if(!cont) return;
+    const log=[...workoutLogs].reverse().find(l=>l.date===today&&l.day===day);
+    if(!log){cont.innerHTML='';return;}
+    cont.innerHTML=`<div class="log-entry" style="margin-top:10px;position:relative;">
       <div class="log-entry-header">
-        <div><div class="log-entry-date">${log.date}</div><div class="log-entry-day">${log.dayName||log.day}</div></div>
-        <button class="log-entry-delete" onclick="delLog('${log.date}','${log.day}')">✕</button>
+        <div class="log-entry-date">${log.date}</div>
+        <button class="log-entry-delete" onclick="delTodaySession('${day}')">✕</button>
       </div>
       ${log.exercises.map(ex=>`<div class="log-ex-item"><span class="${ex.done?'log-ex-done':'log-ex-skip'}">${ex.done?'✓':'–'} ${ex.name}</span><span class="log-w-badge">${ex.w&&ex.weight?ex.weight+' kg':ex.sets}</span></div>`).join('')}
       ${log.notes?`<div style="margin-top:8px;font-size:12px;color:#c4c4bc;font-style:italic;">"${log.notes}"</div>`:''}
-    </div>`).join('');
+    </div>`;
+  });
 }
 
-function delLog(date,day){
-  workoutLogs=workoutLogs.filter(l=>!(l.date===date&&l.day===day));
-  save('logs',workoutLogs); renderCalendar();
+function delTodaySession(day){
+  const today=todayStr();
+  workoutLogs=workoutLogs.filter(l=>!(l.date===today&&l.day===day));
+  save('logs',workoutLogs); renderTodayTrainingSessions(); renderCalendar();
 }
 
 // ════════════════════════════════════════
@@ -1223,6 +1232,7 @@ updateHeaderWeight();
 updateTargetDisplays();
 renderNutTracker();
 renderCalendar();
+renderTodayTrainingSessions();
 </script>
 </body>
 </html>
