@@ -170,6 +170,9 @@
   .weight-input{width:68px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 7px;font-family:'DM Mono',monospace;font-size:16px;color:var(--text);text-align:center;}
   .weight-input:focus{outline:none;border-color:var(--accent);}
   .weight-unit{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+  .reps-input{width:48px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 7px;font-family:'DM Mono',monospace;font-size:16px;color:var(--text);text-align:center;}
+  .reps-input:focus{outline:none;border-color:var(--accent);}
+  .ex-log-extra{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
   .target-toggle{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
   .target-toggle::after{content:'★';font-size:12px;color:var(--border);transition:color .15s;}
   .target-toggle.hit{border-color:var(--accent2);}
@@ -767,10 +770,10 @@ let curDay=null, logState={};
 function openLogModal(day){
   curDay=day; logState={};
   const last=[...workoutLogs].reverse().find(l=>l.day===day);
-  const lw={}; if(last) last.exercises.forEach(e=>{lw[e.id]=e.weight;});
-  DAYS[day].exercises.forEach(ex=>{ logState[ex.id]={done:false,weight:lw[ex.id]||'',hitTarget:false}; });
+  const lw={}; if(last) last.exercises.forEach(e=>{lw[e.id]={weight:e.weight,reps:e.reps};});
+  DAYS[day].exercises.forEach(ex=>{ logState[ex.id]={done:false,weight:(lw[ex.id]&&lw[ex.id].weight)||'',reps:(lw[ex.id]&&lw[ex.id].reps)||'',hitTarget:false}; });
   document.getElementById('logModalTitle').textContent='LOG DAY '+day;
-  document.getElementById('logModalDate').textContent=todayStr()+' · Previous weights pre-filled';
+  document.getElementById('logModalDate').textContent=todayStr()+' · Previous weights & reps pre-filled';
   document.getElementById('logNotes').value='';
   renderLogExs(); updateLogProgress();
   document.getElementById('logModal').classList.add('open');
@@ -786,7 +789,9 @@ function renderLogExs(){
       <div class="ex-check ${s.done?'checked':''}" onclick="toggleChk('${ex.id}',this)"></div>
       <div class="ex-log-name ${s.done?'done':''}" id="en-${ex.id}">${ex.name}</div>
       <span class="ex-log-sets">${ex.sets}</span>
-      ${ex.w?`<input class="weight-input" type="number" step="0.5" min="0" placeholder="kg" value="${s.weight}" oninput="updW('${ex.id}',this.value)"><span class="weight-unit">kg</span><div class="target-toggle ${s.hitTarget?'hit':''}" onclick="toggleHit('${ex.id}',this)" title="Hit target reps at this weight"></div>`:'<span style="width:68px;display:inline-block;"></span>'}
+      <div class="ex-log-extra">
+      ${ex.w?`<input class="weight-input" type="number" step="0.5" min="0" placeholder="kg" value="${s.weight}" oninput="updW('${ex.id}',this.value)"><span class="weight-unit">kg</span><input class="reps-input" type="number" step="1" min="0" placeholder="reps" value="${s.reps}" oninput="updReps('${ex.id}',this.value)"><span class="weight-unit">reps</span><div class="target-toggle ${s.hitTarget?'hit':''}" onclick="toggleHit('${ex.id}',this)" title="Hit target reps at this weight"></div>`:''}
+      </div>
     `;
     c.appendChild(row);
   });
@@ -798,6 +803,7 @@ function toggleChk(id,el){
   updateLogProgress();
 }
 function updW(id,v){ logState[id].weight=v; }
+function updReps(id,v){ logState[id].reps=v; }
 function toggleHit(id,el){ logState[id].hitTarget=!logState[id].hitTarget; el.classList.toggle('hit'); }
 function updateLogProgress(){
   const exs=DAYS[curDay].exercises;
@@ -812,7 +818,7 @@ function saveSession(){
     date:today, day:curDay, dayName:DAYS[curDay].name,
     exercises:DAYS[curDay].exercises.map(ex=>({
       id:ex.id, name:ex.name, sets:ex.sets,
-      done:logState[ex.id].done, weight:logState[ex.id].weight, w:ex.w, hitTarget:logState[ex.id].hitTarget
+      done:logState[ex.id].done, weight:logState[ex.id].weight, reps:logState[ex.id].reps, w:ex.w, hitTarget:logState[ex.id].hitTarget
     })),
     notes:document.getElementById('logNotes').value,
     _version:4
@@ -1047,7 +1053,7 @@ function showDayLog(ds){
   let h=`<div style="margin:12px 0 16px;padding-top:12px;border-top:1px solid var(--border);"><div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);margin-bottom:10px;">${ds}</div>`;
   logs.forEach(log=>{
     h+=`<div class="log-entry"><div class="log-entry-header"><div><div class="log-entry-date">${log.dayName||log.day}</div></div></div>`;
-    log.exercises.forEach(ex=>{h+=`<div class="log-ex-item"><span class="${ex.done?'log-ex-done':'log-ex-skip'}">${ex.done?'✓':'–'} ${ex.name}</span><span class="log-w-badge">${ex.w&&ex.weight?ex.weight+' kg':ex.sets}${ex.hitTarget?' <span style="color:var(--accent2)">★</span>':''}</span></div>`;});
+    log.exercises.forEach(ex=>{h+=`<div class="log-ex-item"><span class="${ex.done?'log-ex-done':'log-ex-skip'}">${ex.done?'✓':'–'} ${ex.name}</span><span class="log-w-badge">${ex.w&&ex.weight?ex.weight+' kg'+(ex.reps?' × '+ex.reps:''):ex.sets}${ex.hitTarget?' <span style="color:var(--accent2)">★</span>':''}</span></div>`;});
     if(log.notes) h+=`<div style="margin-top:8px;font-size:12px;color:#c4c4bc;font-style:italic;">"${log.notes}"</div>`;
     h+='</div>';
   });
@@ -1078,7 +1084,7 @@ function renderTodayTrainingSessions(){
         <div class="log-entry-date">${log.date}</div>
         <button class="log-entry-delete" onclick="delTodaySession('${day}')">✕</button>
       </div>
-      ${log.exercises.map(ex=>`<div class="log-ex-item"><span class="${ex.done?'log-ex-done':'log-ex-skip'}">${ex.done?'✓':'–'} ${ex.name}</span><span class="log-w-badge">${ex.w&&ex.weight?ex.weight+' kg':ex.sets}${ex.hitTarget?' <span style="color:var(--accent2)">★</span>':''}</span></div>`).join('')}
+      ${log.exercises.map(ex=>`<div class="log-ex-item"><span class="${ex.done?'log-ex-done':'log-ex-skip'}">${ex.done?'✓':'–'} ${ex.name}</span><span class="log-w-badge">${ex.w&&ex.weight?ex.weight+' kg'+(ex.reps?' × '+ex.reps:''):ex.sets}${ex.hitTarget?' <span style="color:var(--accent2)">★</span>':''}</span></div>`).join('')}
       ${log.notes?`<div style="margin-top:8px;font-size:12px;color:#c4c4bc;font-style:italic;">"${log.notes}"</div>`:''}
     </div>`;
   });
