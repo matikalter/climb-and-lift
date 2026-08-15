@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Climb & Lift">
@@ -18,6 +18,7 @@
     --danger:#ff6060; --green:#42c97e; --radius:12px;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{touch-action:manipulation;}
   body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;padding:0 0 max(80px, env(safe-area-inset-bottom) + 60px);-webkit-font-smoothing:antialiased;}
 
   header{padding:max(32px, env(safe-area-inset-top) + 12px) 22px 22px;border-bottom:1px solid var(--border);background:linear-gradient(160deg,#1a1f0e 0%,#0f0f0d 60%);}
@@ -268,6 +269,27 @@
 
   .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--accent);color:#0f0f0d;font-family:'DM Mono',monospace;font-size:12px;padding:10px 20px;border-radius:20px;z-index:1000;opacity:0;transition:opacity .3s;pointer-events:none;}
   .toast.show{opacity:1;}
+
+  /* PROGRESS TAB */
+  .prog-ex-row{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer;}
+  .prog-ex-row:last-child{border-bottom:none;}
+  .prog-ex-body{flex:1;min-width:0;}
+  .prog-ex-name{font-size:13px;font-weight:500;color:var(--text);}
+  .prog-ex-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:3px;}
+  .prog-ex-pr{font-family:'DM Mono',monospace;font-size:12px;color:var(--accent);flex-shrink:0;}
+  .prog-ex-pr-none{color:var(--muted);}
+  .prog-ex-arrow{font-size:18px;color:var(--muted);flex-shrink:0;}
+  .back-btn{background:none;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:20px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;line-height:1;}
+  .chart-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:12px;}
+  .chart-container{background:var(--surface);border-radius:12px;}
+  .chart-tooltip-card{margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;}
+  .chart-tt-date{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;}
+  .chart-tt-main{font-size:22px;font-weight:700;color:var(--text);}
+  .chart-tt-unit{font-size:13px;color:var(--muted);font-weight:400;}
+  .chart-tt-x{font-size:16px;color:var(--muted);margin:0 4px;}
+  .chart-tt-reps{font-size:20px;color:var(--accent);font-weight:600;}
+  .chart-tt-star{font-size:16px;color:var(--accent2);margin-left:6px;}
+  .prog-empty{text-align:center;padding:48px 0;font-size:13px;color:var(--muted);line-height:1.8;}
 </style>
 </head>
 <body>
@@ -297,6 +319,7 @@
     <button class="tab" onclick="showTab('nutrition',this)">Nutrition</button>
     <button class="tab" onclick="showTab('bodyweight',this)">Weight</button>
     <button class="tab" onclick="showTab('logview',this)">Log</button>
+    <button class="tab" onclick="showTab('progress',this)">Progress</button>
     <button class="tab" id="infoTabProxy" style="display:none;"></button>
   </div>
 </div>
@@ -322,7 +345,6 @@
       <div class="phase-label">Main Work</div>
       <div class="exercise"><div><div class="ex-name">Barbell Back Squat</div><div class="ex-note">Full depth. Rest 2–3 min. Start moderate, increase weekly.</div><button class="timer-btn" onclick="openTimer(150)">⏱ 2:30 rest</button></div><div class="ex-sets">4 × 6–8</div></div>
       <div class="exercise"><div><div class="ex-name">Romanian Deadlift (RDL)</div><div class="ex-note">Barbell or dumbbells. Feel the hamstring stretch at the bottom — no back rounding.</div><button class="timer-btn" onclick="openTimer(120)">⏱ 2:00 rest</button></div><div class="ex-sets">3 × 8–10</div></div>
-      <div class="exercise"><div><div class="ex-name">Dumbbell Bulgarian Split Squat</div><div class="ex-note">Rear foot elevated on bench. Exposes and corrects leg strength imbalances.</div><button class="timer-btn" onclick="openTimer(90)">⏱ 1:30 rest</button></div><div class="ex-sets">3 × 8/leg</div></div>
       <div class="exercise"><div><div class="ex-name">Barbell Hip Thrust</div><div class="ex-note">Bench + barbell across hips. Drive hips to full extension at the top. The primary glute isolation movement — pairs with RDL and BSS to complete lower body work.</div><button class="timer-btn" onclick="openTimer(90)">⏱ 1:30 rest</button></div><div class="ex-sets">3 × 10–12</div></div>
       <div class="phase-label">Calves</div>
       <div class="exercise"><div><div class="ex-name">Standing Calf Raise (barbell on back)</div><div class="ex-note">Full range — deep stretch at bottom, full extension at top. Tempo: 2 up / 2 hold / 2 down. Hits gastrocnemius (outer visible calf shape).</div><button class="timer-btn" onclick="openTimer(90)">⏱ 1:30 rest</button></div><div class="ex-sets">4 × 10–12</div></div>
@@ -349,7 +371,7 @@
       <div class="exercise"><div><div class="ex-name">Dumbbell Incline Bench Press</div><div class="ex-note">45° incline. Emphasises upper chest. Dumbbells allow natural wrist rotation — easier on the shoulders than a barbell.</div><button class="timer-btn" onclick="openTimer(120)">⏱ 2:00 rest</button></div><div class="ex-sets">3 × 8–10</div></div>
       <div class="exercise"><div><div class="ex-name">Weighted Dips (dip bar + weight belt)</div><div class="ex-note">Lean slightly forward for chest emphasis. Control the descent slowly — 2–3 seconds down.</div><button class="timer-btn" onclick="openTimer(90)">⏱ 1:30 rest</button></div><div class="ex-sets">3 × 8–10</div></div>
       <div class="exercise"><div><div class="ex-name">Cable / Band Lateral Raise</div><div class="ex-note">Single arm, cable or resistance band. Better than dumbbells — constant tension at the bottom where dumbbells go slack.</div><button class="timer-btn" onclick="openTimer(60)">⏱ 1:00 rest</button></div><div class="ex-sets">3 × 12–15</div></div>
-      <div class="exercise"><div><div class="ex-name">Bird Dog</div><div class="ex-note">On all fours: extend opposite arm and leg simultaneously, hold 2 sec, return. Slow and controlled — no hip rotation. Foundational spinal stability; spread across the week for back health.</div></div><div class="ex-sets">2 × 10/side</div></div>
+      <div class="exercise"><div><div class="ex-name">Dead Bug</div><div class="ex-note">Lie on back, arms up, knees at 90°. Lower opposite arm and leg toward floor while pressing lower back flat. Much harder than Bird Dog — challenges anti-flexion stability under gravity. Ideal alongside push work.</div></div><div class="ex-sets">2 × 10/side</div></div>
       <div class="phase-label">Calves</div>
       <div class="exercise"><div><div class="ex-name">Seated Calf Raise (dumbbell on knee)</div><div class="ex-note">Sit on a bench, dumbbell on your knee, toes on a plate edge for range. Bent knee isolates the soleus — the deeper calf muscle that adds lower thickness. Heavy and slow.</div><button class="timer-btn" onclick="openTimer(90)">⏱ 1:30 rest</button></div><div class="ex-sets">4 × 12–15</div></div>
       <button class="log-btn" onclick="openLogModal('B')">+ LOG THIS SESSION</button>
@@ -523,6 +545,25 @@
   <div id="selectedDayLog"></div>
 </div>
 
+<!-- ══════════════ PROGRESS ══════════════ -->
+<div class="section" id="progress">
+  <div id="progressExList">
+    <div class="section-title">Progress</div>
+    <p class="section-sub">Tap a lift to see your weight history over time.</p>
+    <div id="progExListContent"></div>
+  </div>
+  <div id="progressChartView" style="display:none;">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+      <button class="back-btn" onclick="closeProgressChart()">‹</button>
+      <div class="section-title" id="chartExName" style="margin:0;font-size:22px;"></div>
+    </div>
+    <div class="chart-wrap" id="chartWrap">
+      <div class="chart-container" id="chartContainer"></div>
+    </div>
+    <div class="chart-tooltip-card" id="chartTooltip" style="display:none;"></div>
+  </div>
+</div>
+
 <!-- ══════════════ INFO ══════════════ -->
 <div class="section" id="principles">
   <div class="section-title">Key Principles</div>
@@ -635,7 +676,6 @@ const DAYS = {
     {id:'A-climb',  name:'Bouldering / Climbing',                sets:'session',     w:false},
     {id:'A-squat',  name:'Barbell Back Squat',                   sets:'4 × 6–8',     w:true },
     {id:'A-rdl',    name:'Romanian Deadlift (RDL)',               sets:'3 × 8–10',    w:true },
-    {id:'A-bss',    name:'Dumbbell Bulgarian Split Squat',        sets:'3 × 8/leg',   w:true },
     {id:'A-ht',     name:'Barbell Hip Thrust',                   sets:'3 × 10–12',   w:true },
     {id:'A-calf',   name:'Standing Calf Raise (barbell)',         sets:'4 × 10–12',   w:true },
     {id:'A-abwheel',name:'Ab Wheel Rollout (or Barbell rollout)', sets:'2 × 8–12',    w:false},
@@ -649,7 +689,7 @@ const DAYS = {
     {id:'B-inc',   name:'Dumbbell Incline Bench Press',   sets:'3 × 8–10',  w:true },
     {id:'B-dips',  name:'Weighted Dips',                  sets:'3 × 8–10',  w:true },
     {id:'B-lat',   name:'Cable / Band Lateral Raise',     sets:'3 × 12–15', w:true },
-    {id:'B-bd',    name:'Bird Dog',                       sets:'2 × 10/side',w:false},
+    {id:'B-dd',    name:'Dead Bug',                       sets:'2 × 10/side',w:false},
     {id:'B-calf',  name:'Seated Calf Raise (dumbbell)',   sets:'4 × 12–15', w:true },
   ]},
   C: { name:'Day C — Posterior Chain & Arms', exercises:[
@@ -750,6 +790,7 @@ function showTab(id,el){
   if(id==='logview') renderCalendar();
   if(id==='bodyweight') renderBwList();
   if(id==='nutrition'){ updateTargetDisplays(); renderNutTracker(); }
+  if(id==='progress') renderProgressTab();
   if(id==='training') renderTodayTrainingSessions();
 }
 function showInfoTab(){
@@ -1228,6 +1269,203 @@ function importData(){
     status.textContent='⚠ Import failed: '+e.message;
     status.style.color='var(--danger)';
   }
+}
+
+// ════════════════════════════════════════
+// PROGRESS TAB
+// ════════════════════════════════════════
+let progressChartState=null;
+
+function renderProgressTab(){
+  const listEl=document.getElementById('progressExList');
+  const chartEl=document.getElementById('progressChartView');
+  listEl.style.display=''; chartEl.style.display='none';
+  progressChartState=null;
+
+  // Collect all weighted exercises across days
+  const exs=[];
+  ['A','B','C'].forEach(day=>{
+    DAYS[day].exercises.forEach(ex=>{ if(ex.w) exs.push({...ex,day}); });
+  });
+
+  const rows=exs.map(ex=>{
+    const sessions=workoutLogs
+      .filter(l=>l.exercises&&l.exercises.some(e=>e.id===ex.id&&e.weight))
+      .map(l=>{ const e=l.exercises.find(e=>e.id===ex.id); return {date:l.date,weight:parseFloat(e.weight),reps:e.reps||'',hitTarget:!!e.hitTarget}; })
+      .sort((a,b)=>a.date.localeCompare(b.date));
+    const pr=sessions.length?Math.max(...sessions.map(s=>s.weight)):null;
+    return {...ex,sessions,pr};
+  });
+
+  const c=document.getElementById('progExListContent');
+  if(!rows.length){ c.innerHTML='<div class="prog-empty">No weighted exercises found.</div>'; return; }
+  c.innerHTML=rows.map(ex=>`
+    <div class="prog-ex-row" onclick="openProgressChart('${ex.id}','${ex.name.replace(/'/g,"&#39;")}')">
+      <div class="prog-ex-body">
+        <div class="prog-ex-name">${ex.name}</div>
+        <div class="prog-ex-meta">Day ${ex.day} · ${ex.sessions.length} session${ex.sessions.length!==1?'s':''}</div>
+      </div>
+      <div class="prog-ex-pr${ex.pr===null?' prog-ex-pr-none':''}">${ex.pr!==null?ex.pr+' kg':'—'}</div>
+      <span class="prog-ex-arrow">›</span>
+    </div>`).join('');
+}
+
+function openProgressChart(exId,exName){
+  const sessions=workoutLogs
+    .filter(l=>l.exercises&&l.exercises.some(e=>e.id===exId&&e.weight))
+    .map(l=>{ const e=l.exercises.find(e=>e.id===exId); return {date:l.date,weight:parseFloat(e.weight),reps:e.reps||'',hitTarget:!!e.hitTarget}; })
+    .sort((a,b)=>a.date.localeCompare(b.date));
+
+  document.getElementById('progressExList').style.display='none';
+  const cv=document.getElementById('progressChartView'); cv.style.display='';
+  document.getElementById('chartExName').textContent=exName;
+
+  const container=document.getElementById('chartContainer');
+  const tooltip=document.getElementById('chartTooltip');
+
+  if(!sessions.length){
+    container.innerHTML='<div class="prog-empty">No weight data logged yet.<br>Log this exercise with a weight to see your progress.</div>';
+    tooltip.style.display='none'; return;
+  }
+
+  progressChartState={curIdx:sessions.length-1,sessions};
+  container.innerHTML='';
+  const wrap=document.getElementById('chartWrap');
+  const containerW=wrap.clientWidth||window.innerWidth-40;
+  container.appendChild(buildProgressSvg(sessions,containerW));
+  updateProgressTooltip(sessions.length-1);
+}
+
+function closeProgressChart(){
+  document.getElementById('progressExList').style.display='';
+  document.getElementById('progressChartView').style.display='none';
+  document.getElementById('chartTooltip').style.display='none';
+  progressChartState=null;
+}
+
+function buildProgressSvg(sessions,containerW){
+  const N=sessions.length;
+  const PAD={l:44,r:24,t:28,b:36};
+  const H=220;
+  const MIN_SPACING=60;
+  const innerW=Math.max(containerW-PAD.l-PAD.r,(N-1)*MIN_SPACING||(MIN_SPACING));
+  const W=innerW+PAD.l+PAD.r;
+
+  const weights=sessions.map(s=>s.weight);
+  const rawMin=Math.min(...weights), rawMax=Math.max(...weights);
+  const yPad=Math.max((rawMax-rawMin)*0.25,5);
+  const yMin=Math.floor((rawMin-yPad)/5)*5;
+  const yMax=Math.ceil((rawMax+yPad)/5)*5;
+  const yRange=yMax-yMin||10;
+  const plotH=H-PAD.t-PAD.b;
+  const plotW=innerW;
+
+  const xOf=i=>PAD.l+(N===1?plotW/2:i*plotW/(N-1));
+  const yOf=w=>PAD.t+plotH*(1-(w-yMin)/yRange);
+
+  const gridStep=yRange<=20?5:yRange<=50?10:25;
+  const gridLines=[];
+  for(let g=Math.ceil(yMin/gridStep)*gridStep;g<=yMax;g+=gridStep) gridLines.push(g);
+
+  const ns='http://www.w3.org/2000/svg';
+  const svg=document.createElementNS(ns,'svg');
+  svg.setAttribute('width',W); svg.setAttribute('height',H);
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.style.cssText='display:block;overflow:visible;';
+
+  const mk=(tag,a={})=>{ const el=document.createElementNS(ns,tag); Object.entries(a).forEach(([k,v])=>el.setAttribute(k,v)); return el; };
+  const txt=(content,a={})=>{ const el=mk('text',a); el.textContent=content; return el; };
+
+  // Gradient
+  const defs=mk('defs');
+  const grad=mk('linearGradient',{id:'pgrd',x1:'0',y1:'0',x2:'0',y2:'1'});
+  const s1=mk('stop',{'offset':'0%','stop-color':'#d4df64','stop-opacity':'0.2'});
+  const s2=mk('stop',{'offset':'100%','stop-color':'#d4df64','stop-opacity':'0'});
+  grad.appendChild(s1); grad.appendChild(s2); defs.appendChild(grad); svg.appendChild(defs);
+
+  // Grid lines + y labels
+  gridLines.forEach(g=>{
+    const y=yOf(g);
+    svg.appendChild(mk('line',{x1:PAD.l,y1:y,x2:W-PAD.r,y2:y,stroke:'var(--border)','stroke-width':'1'}));
+    svg.appendChild(txt(g,{x:PAD.l-7,y:y+4,'text-anchor':'end',fill:'var(--muted)','font-family':"'DM Mono',monospace",'font-size':'9'}));
+  });
+
+  // Area fill
+  if(N>1){
+    const area=sessions.map((s,i)=>`${i===0?'M':'L'}${xOf(i)},${yOf(s.weight)}`).join(' ')+
+      ` L${xOf(N-1)},${H-PAD.b} L${xOf(0)},${H-PAD.b} Z`;
+    svg.appendChild(mk('path',{d:area,fill:'url(#pgrd)'}));
+  }
+
+  // Line
+  if(N>1){
+    const path=sessions.map((s,i)=>`${i===0?'M':'L'}${xOf(i)},${yOf(s.weight)}`).join(' ');
+    svg.appendChild(mk('path',{d:path,stroke:'var(--accent)','stroke-width':'2.5',fill:'none','stroke-linecap':'round','stroke-linejoin':'round'}));
+  }
+
+  // Dots
+  sessions.forEach((s,i)=>{
+    svg.appendChild(mk('circle',{cx:xOf(i),cy:yOf(s.weight),r:'4',fill:'var(--accent)',stroke:'var(--surface)','stroke-width':'2','data-idx':i}));
+  });
+
+  // X date labels
+  const every=Math.max(1,Math.ceil(N/7));
+  sessions.forEach((s,i)=>{
+    if(i%every!==0&&i!==N-1) return;
+    svg.appendChild(txt(s.date.slice(5),{x:xOf(i),y:H-PAD.b+16,'text-anchor':'middle',fill:'var(--muted)','font-family':"'DM Mono',monospace",'font-size':'9'}));
+  });
+
+  // Cursor line
+  const curLine=mk('line',{x1:0,y1:PAD.t-10,x2:0,y2:H-PAD.b,stroke:'var(--accent2)','stroke-width':'1.5','stroke-dasharray':'3 3',opacity:'0.85'});
+  curLine.id='pgCurLine'; svg.appendChild(curLine);
+
+  // Cursor dot (large, on top)
+  const curDot=mk('circle',{cx:0,cy:0,r:'6',fill:'var(--accent2)',stroke:'var(--surface)','stroke-width':'2.5'});
+  curDot.id='pgCurDot'; svg.appendChild(curDot);
+
+  // Interaction overlay
+  const overlay=mk('rect',{x:0,y:0,width:W,height:H,fill:'transparent'});
+  overlay.style.cursor='crosshair';
+
+  const hit=svgX=>{
+    if(!progressChartState) return;
+    let best=0,bd=Infinity;
+    sessions.forEach((_,i)=>{ const d=Math.abs(xOf(i)-svgX); if(d<bd){bd=d;best=i;} });
+    if(progressChartState.curIdx===best) return;
+    progressChartState.curIdx=best;
+    setCursor(best);
+    updateProgressTooltip(best);
+  };
+
+  const toSvgX=clientX=>{ const r=svg.getBoundingClientRect(); return clientX-r.left; };
+  overlay.addEventListener('mousemove',e=>hit(toSvgX(e.clientX)));
+  overlay.addEventListener('touchstart',e=>{e.preventDefault();hit(toSvgX(e.touches[0].clientX));},{passive:false});
+  overlay.addEventListener('touchmove',e=>{e.preventDefault();hit(toSvgX(e.touches[0].clientX));},{passive:false});
+  svg.appendChild(overlay);
+
+  function setCursor(idx){
+    const cl=svg.querySelector('#pgCurLine');
+    const cd=svg.querySelector('#pgCurDot');
+    if(!cl||!cd) return;
+    const x=xOf(idx),y=yOf(sessions[idx].weight);
+    cl.setAttribute('x1',x);cl.setAttribute('x2',x);
+    cd.setAttribute('cx',x);cd.setAttribute('cy',y);
+  }
+
+  // Position cursor at last point after DOM insert
+  requestAnimationFrame(()=>setCursor(N-1));
+  return svg;
+}
+
+function updateProgressTooltip(idx){
+  if(!progressChartState) return;
+  const s=progressChartState.sessions[idx];
+  const tt=document.getElementById('chartTooltip');
+  if(!tt) return;
+  tt.style.display='';
+  tt.innerHTML=`
+    <div class="chart-tt-date">${s.date}</div>
+    <div class="chart-tt-main">${s.weight} <span class="chart-tt-unit">kg</span>${s.reps?` <span class="chart-tt-x">×</span> <span class="chart-tt-reps">${s.reps}</span>`:''}${s.hitTarget?' <span class="chart-tt-star">★</span>':''}</div>`;
 }
 
 // ════════════════════════════════════════
