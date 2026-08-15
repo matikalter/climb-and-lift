@@ -11,14 +11,15 @@ All data stored in `localStorage` with key prefix `cl4_` (via `save(k,v)` / `loa
 ## App structure
 | Section | id | Notes |
 |---|---|---|
-| Training | `training` | Day cards + log modal |
-| Nutrition | `nutrition` | Macro tracker + food chips |
-| Weight | `bodyweight` | Body weight log |
+| Training | `training` | Day cards + log modal + today's logged sessions inline |
+| Nutrition | `nutrition` | Macro tracker + food chips, **then body weight log**, then meal plan |
 | Log | `logview` | Calendar + day detail |
 | Progress | `progress` | Per-exercise weight/rep graphs |
 | Info | `principles` | Key principles text |
 
 Tabs in `<div class="tabs-wrap">`. `showTab(id, el)` activates a section.
+There is no Weight tab — the body-weight logger lives inside the Nutrition section
+(`#bwInput` / `#bwSvg` / `#bwList`), and `showTab('nutrition')` calls `renderBwList()`.
 
 ## Design system
 ```
@@ -114,12 +115,37 @@ C: Day C — Posterior Chain & Arms
 | `showTab(id, el)` | Switches active section |
 | `openLogModal(day)` | Opens workout log modal for day A/B/C |
 | `saveSession()` | Saves current logState to workoutLogs |
-| `renderProgressTab()` | Renders exercise list in Progress tab |
-| `openProgressChart(exId, exName)` | Shows weight/rep graph for exercise |
+| `renderProgressTab()` | Renders exercise list in Progress tab, grouped by Day A/B/C |
+| `openProgressChart(exId, exName)` | Opens the chart view for one exercise |
+| `setChartFilter(btn, tf)` | Applies a `1M` / `3M` / `1Y` / `ALL` timeframe |
+| `chartDomain()` | Returns `[t0, t1]` — the x-axis time window for the active filter |
+| `drawChart()` | Measures the container and rebuilds the SVG to fit |
+| `buildProgressSvg(sessions, W, H, t0, t1)` | Builds the SVG itself |
+| `buildTimeTicks(t0, t1, plotW)` | Date ticks sized to the span, thinned to fit the width |
 | `renderNutTracker()` | Re-renders nutrition tracker for today |
+| `renderBwList()` | Re-renders body-weight list + sparkline (inside Nutrition) |
 | `renderCalendar()` | Re-renders log tab calendar |
 | `exportData()` / `importData()` | JSON backup/restore |
 | `save(k, v)` / `load(k, d)` | localStorage helpers (prefix `cl4_`) |
+
+## Progress chart
+The chart **never scrolls** — it always redraws to fit the container exactly, in
+both portrait and landscape. Getting that right depends on a few things:
+
+- **x is positioned by date, not by index.** `xOf(i)` maps a session's real date
+  onto `[t0, t1]` from `chartDomain()`. A bounded filter spans `today - N days →
+  today`; `ALL` spans first session → last session. This is what makes a wider
+  timeframe condense the points and a narrower one spread them out.
+- **Width** comes from `chartWrap.getBoundingClientRect().width`; **height** is
+  220px portrait, or ~48% of viewport height (clamped 150–210) in landscape, so
+  the chart plus tooltip stay above the fold on a short screen.
+- **Density-aware marks**: `minGap` (smallest pixel gap between points) drives dot
+  radius and line width, and dots are dropped entirely below 5px so long
+  timeframes read as a trend line rather than a chain of beads.
+- `window.resize` / `orientationchange` re-run `drawChart()` (debounced 150ms).
+- Filter pills carry `data-tf`; ones with no sessions in range get `.empty` (dimmed).
+- `progressChartState = {curIdx, allSessions, sessions, filter}` — `allSessions` is
+  the unfiltered set, `sessions` is what's currently drawn.
 
 ## Export/import format
 Version 4. Import merges by date+day key (existing entries not overwritten by import unless same date+day). New fields on exercise objects are additive — old exports without them still import safely. Never bump `_version` for additive-only changes.
@@ -130,3 +156,17 @@ Version 4. Import merges by date+day key (existing entries not overwritten by im
 - **iOS input zoom**: `font-size: 16px` on all inputs (below 16px triggers auto-zoom on iOS Safari).
 - **iOS :hover persistence**: use `:active` not `:hover` for delete/action buttons to avoid sticky red X bugs on touch devices.
 - **cherry-pick caution**: don't cherry-pick commits from the stale feature branch onto main without careful inspection — the stale branch has old/diverged code.
+- **Date parsing**: dates are `YYYY-MM-DD` strings. Parse with `new Date(d+'T00:00:00')` (the `tOf` helper) so they land on local midnight — bare `new Date('YYYY-MM-DD')` parses as UTC and shifts the day in negative-offset timezones. Same reason `fmtYMD` formats by hand instead of using `toISOString()`.
+- **Chart overflow**: don't reintroduce `overflow-x:auto` on `.chart-wrap`. The chart is sized to fit; if something overflows, the sizing is wrong.
+
+## Verifying UI changes
+Chromium + Playwright are available in the web sandbox and are the fastest way to
+check layout across orientations:
+```bash
+npx http-server -p 8231 -s &          # file:// blocks localStorage, so serve it
+# playwright at /opt/node22/lib/node_modules/playwright
+# chromium at /opt/pw-browsers/chromium-1194/chrome-linux/chrome
+```
+Seed state with `page.addInitScript` writing `cl4_logs` before `page.goto`, then
+assert on geometry (e.g. svg width vs container width, `scrollWidth - clientWidth`)
+rather than eyeballing screenshots alone.

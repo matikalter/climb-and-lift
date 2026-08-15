@@ -280,7 +280,7 @@
   .prog-ex-pr-none{color:var(--muted);}
   .prog-ex-arrow{font-size:18px;color:var(--muted);flex-shrink:0;}
   .back-btn{background:none;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:20px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;line-height:1;}
-  .chart-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:12px;}
+  .chart-wrap{overflow:hidden;border-radius:12px;width:100%;}
   .chart-container{background:var(--surface);border-radius:12px;}
   .chart-tooltip-card{margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;}
   .chart-tt-date{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;}
@@ -295,10 +295,8 @@
   .chart-filter-row{display:flex;gap:8px;margin-bottom:12px;}
   .chart-filter{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;transition:all .15s;}
   .chart-filter.active{background:var(--accent);color:#0f0f0d;border-color:var(--accent);font-weight:600;}
-  .chart-nav-wrap{display:flex;align-items:center;gap:8px;}
-  .chart-arrow{background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:18px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;line-height:1;transition:all .15s;}
-  .chart-arrow:active{border-color:var(--accent);color:var(--accent);}
-  .chart-wrap{flex:1;overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:12px;min-width:0;}
+  .chart-filter.empty{opacity:.35;}
+  .chart-range-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--muted);margin:8px 2px 0;text-align:center;}
 </style>
 </head>
 <body>
@@ -564,18 +562,15 @@
       <div class="section-title" id="chartExName" style="margin:0;font-size:22px;"></div>
     </div>
     <div class="chart-filter-row" id="chartFilterRow">
-      <button class="chart-filter active" onclick="setChartFilter(this,'ALL')">All</button>
-      <button class="chart-filter" onclick="setChartFilter(this,'1Y')">1Y</button>
-      <button class="chart-filter" onclick="setChartFilter(this,'3M')">3M</button>
-      <button class="chart-filter" onclick="setChartFilter(this,'1M')">1M</button>
+      <button class="chart-filter" data-tf="1M" onclick="setChartFilter(this,'1M')">1M</button>
+      <button class="chart-filter" data-tf="3M" onclick="setChartFilter(this,'3M')">3M</button>
+      <button class="chart-filter" data-tf="1Y" onclick="setChartFilter(this,'1Y')">1Y</button>
+      <button class="chart-filter active" data-tf="ALL" onclick="setChartFilter(this,'ALL')">All</button>
     </div>
-    <div class="chart-nav-wrap">
-      <button class="chart-arrow" onclick="scrollChart(-1)">‹</button>
-      <div class="chart-wrap" id="chartWrap">
-        <div class="chart-container" id="chartContainer"></div>
-      </div>
-      <button class="chart-arrow" onclick="scrollChart(1)">›</button>
+    <div class="chart-wrap" id="chartWrap">
+      <div class="chart-container" id="chartContainer"></div>
     </div>
+    <div class="chart-range-label" id="chartRangeLabel"></div>
     <div class="chart-tooltip-card" id="chartTooltip" style="display:none;"></div>
   </div>
 </div>
@@ -1322,6 +1317,17 @@ function renderProgressTab(){
   }).join('');
 }
 
+const TF_DAYS={'1M':30,'3M':90,'1Y':365};
+const MON_ABBR=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const dayMs=86400000;
+const tOf=dateStr=>new Date(dateStr+'T00:00:00').getTime();
+const fmtMD=t=>{const d=new Date(t);return String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+const fmtMon=(t,withYear)=>{const d=new Date(t);return MON_ABBR[d.getMonth()]+(withYear?" '"+String(d.getFullYear()).slice(2):'');};
+const fmtYMD=t=>{const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+
+// Today at local midnight — the right edge of every bounded timeframe
+function todayMs(){ const d=new Date(); d.setHours(0,0,0,0); return d.getTime(); }
+
 function openProgressChart(exId,exName){
   const allSessions=workoutLogs
     .filter(l=>l.exercises&&l.exercises.some(e=>e.id===exId&&e.weight))
@@ -1332,15 +1338,22 @@ function openProgressChart(exId,exName){
   const cv=document.getElementById('progressChartView'); cv.style.display='';
   document.getElementById('chartExName').textContent=exName;
 
-  // Reset filter buttons to All
-  document.querySelectorAll('.chart-filter').forEach(b=>b.classList.remove('active'));
-  const allBtn=document.querySelector('.chart-filter');
-  if(allBtn) allBtn.classList.add('active');
-
   if(!allSessions.length){
     document.getElementById('chartContainer').innerHTML='<div class="prog-empty">No weight data logged yet.<br>Log this exercise with a weight to see your progress.</div>';
-    document.getElementById('chartTooltip').style.display='none'; return;
+    document.getElementById('chartTooltip').style.display='none';
+    document.getElementById('chartRangeLabel').textContent='';
+    document.querySelectorAll('.chart-filter').forEach(b=>b.classList.remove('active','empty'));
+    progressChartState=null; return;
   }
+
+  // Dim timeframes with nothing in them so it's obvious where the data lives
+  const now=todayMs();
+  document.querySelectorAll('.chart-filter').forEach(b=>{
+    const tf=b.dataset.tf;
+    b.classList.toggle('active',tf==='ALL');
+    const has=tf==='ALL'||allSessions.some(s=>tOf(s.date)>=now-TF_DAYS[tf]*dayMs);
+    b.classList.toggle('empty',!has);
+  });
 
   progressChartState={curIdx:allSessions.length-1,allSessions,sessions:allSessions,filter:'ALL'};
   drawChart();
@@ -1351,33 +1364,60 @@ function setChartFilter(btn,filter){
   document.querySelectorAll('.chart-filter').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   progressChartState.filter=filter;
-  const cutoff=filter==='ALL'?null:new Date(Date.now()-(filter==='1M'?30:filter==='3M'?90:365)*24*3600*1000).toISOString().split('T')[0];
-  progressChartState.sessions=cutoff?progressChartState.allSessions.filter(s=>s.date>=cutoff):progressChartState.allSessions;
+  const cutoff=filter==='ALL'?null:todayMs()-TF_DAYS[filter]*dayMs;
+  progressChartState.sessions=cutoff===null?progressChartState.allSessions
+    :progressChartState.allSessions.filter(s=>tOf(s.date)>=cutoff);
   progressChartState.curIdx=Math.max(0,progressChartState.sessions.length-1);
   drawChart();
 }
 
-function scrollChart(dir){
-  const wrap=document.getElementById('chartWrap');
-  if(wrap) wrap.scrollLeft+=dir*110;
+// The x-axis always spans the whole selected timeframe, so a wider filter
+// packs the same points into the same width (more condensed) and a narrower
+// one spreads them out. Nothing ever scrolls off-screen.
+function chartDomain(){
+  const {filter,sessions,allSessions}=progressChartState;
+  const now=todayMs();
+  if(filter!=='ALL') return [now-TF_DAYS[filter]*dayMs,now];
+  const pts=(sessions.length?sessions:allSessions).map(s=>tOf(s.date));
+  let t0=Math.min(...pts), t1=Math.max(...pts);
+  if(t1-t0<dayMs){ t0-=7*dayMs; t1+=7*dayMs; }        // single point: centre it
+  return [t0,t1];                                     // edge padding is pixel-based (PAD.l/PAD.r)
 }
 
 function drawChart(){
   const {sessions}=progressChartState;
   const container=document.getElementById('chartContainer');
+  const label=document.getElementById('chartRangeLabel');
   container.innerHTML='';
+  const [t0,t1]=chartDomain();
   if(!sessions.length){
-    container.innerHTML='<div class="prog-empty">No data in this timeframe.</div>';
-    document.getElementById('chartTooltip').style.display='none'; return;
+    container.innerHTML='<div class="prog-empty">No sessions logged in this timeframe.</div>';
+    document.getElementById('chartTooltip').style.display='none';
+    label.textContent=''; return;
   }
   const wrap=document.getElementById('chartWrap');
-  // Use portrait-safe width: chart always fits exactly in wrap, min spacing sets when it overflows
-  const containerW=wrap.getBoundingClientRect().width||window.innerWidth-100;
-  container.appendChild(buildProgressSvg(sessions,containerW));
-  // Scroll to end to show most recent
-  requestAnimationFrame(()=>{ wrap.scrollLeft=wrap.scrollWidth; });
+  const W=Math.max(240,Math.round(wrap.getBoundingClientRect().width||window.innerWidth-36));
+  // Landscape viewports are short — keep the whole chart above the fold
+  const landscape=window.innerWidth>window.innerHeight;
+  const H=landscape?Math.round(Math.max(150,Math.min(210,window.innerHeight*0.48))):220;
+  container.appendChild(buildProgressSvg(sessions,W,H,t0,t1));
+  // Show the year whenever MM-DD alone would be ambiguous: long spans,
+  // ranges straddling New Year, or history from an earlier year
+  const y0=new Date(t0).getFullYear(), y1=new Date(t1).getFullYear();
+  const f=((t1-t0)/dayMs>300||y0!==y1||y1!==new Date().getFullYear())?fmtYMD:fmtMD;
+  label.textContent=`${f(t0)} → ${f(t1)}  ·  ${sessions.length} session${sessions.length!==1?'s':''}`;
   updateProgressTooltip(progressChartState.curIdx);
 }
+
+// Re-fit on rotation / window resize
+let chartResizeT=null;
+function onChartResize(){
+  if(!progressChartState) return;
+  clearTimeout(chartResizeT);
+  chartResizeT=setTimeout(()=>{ if(progressChartState) drawChart(); },150);
+}
+window.addEventListener('resize',onChartResize);
+window.addEventListener('orientationchange',onChartResize);
 
 function closeProgressChart(){
   document.getElementById('progressExList').style.display='';
@@ -1386,13 +1426,33 @@ function closeProgressChart(){
   progressChartState=null;
 }
 
-function buildProgressSvg(sessions,containerW){
+// Build x-axis ticks that suit the span, then thin them to what fits the width
+function buildTimeTicks(t0,t1,plotW){
+  const spanDays=(t1-t0)/dayMs;
+  let ticks=[];
+  if(spanDays<=45||spanDays<=130){
+    const stepDays=spanDays<=45?7:14;
+    for(let t=t1;t>=t0-1;t-=stepDays*dayMs) ticks.push({t,label:fmtMD(t)});
+    ticks.reverse();
+  }else{
+    const monthStep=spanDays<=400?1:spanDays<=1100?3:6;
+    const withYear=spanDays>400;
+    const d=new Date(t1); d.setHours(0,0,0,0); d.setDate(1);
+    while(d.getTime()>=t0-1){ ticks.push({t:d.getTime(),label:fmtMon(d.getTime(),withYear)}); d.setMonth(d.getMonth()-monthStep); }
+    ticks.reverse();
+  }
+  const maxTicks=Math.max(2,Math.floor(plotW/56));
+  if(ticks.length>maxTicks){
+    const every=Math.ceil(ticks.length/maxTicks);
+    ticks=ticks.filter((_,i)=>(ticks.length-1-i)%every===0);
+  }
+  return ticks;
+}
+
+function buildProgressSvg(sessions,W,H,t0,t1){
   const N=sessions.length;
-  const PAD={l:44,r:24,t:28,b:36};
-  const H=220;
-  const MIN_SPACING=60;
-  const innerW=Math.max(containerW-PAD.l-PAD.r,(N-1)*MIN_SPACING||(MIN_SPACING));
-  const W=innerW+PAD.l+PAD.r;
+  const PAD={l:40,r:18,t:24,b:34};
+  const innerW=Math.max(60,W-PAD.l-PAD.r);
 
   const weights=sessions.map(s=>s.weight);
   const rawMin=Math.min(...weights), rawMax=Math.max(...weights);
@@ -1403,8 +1463,21 @@ function buildProgressSvg(sessions,containerW){
   const plotH=H-PAD.t-PAD.b;
   const plotW=innerW;
 
-  const xOf=i=>PAD.l+(N===1?plotW/2:i*plotW/(N-1));
+  // x is positioned by real date across the selected timeframe, not by index
+  const span=Math.max(t1-t0,1);
+  const xOf=i=>{
+    const f=(tOf(sessions[i].date)-t0)/span;
+    return PAD.l+plotW*Math.min(1,Math.max(0,f));
+  };
   const yOf=w=>PAD.t+plotH*(1-(w-yMin)/yRange);
+
+  // Density-aware marks: once points crowd together the dots become noise,
+  // so wide timeframes render as a clean trend line instead of a bead chain
+  let minGap=Infinity;
+  for(let i=1;i<N;i++) minGap=Math.min(minGap,xOf(i)-xOf(i-1));
+  const showDots=N===1||minGap>=5;
+  const dotR=N===1?5:minGap<11?3:4;
+  const lineW=minGap<5?2.2:minGap<11?2:2.5;
 
   const gridStep=yRange<=20?5:yRange<=50?10:25;
   const gridLines=[];
@@ -1443,19 +1516,19 @@ function buildProgressSvg(sessions,containerW){
   // Line
   if(N>1){
     const path=sessions.map((s,i)=>`${i===0?'M':'L'}${xOf(i)},${yOf(s.weight)}`).join(' ');
-    svg.appendChild(mk('path',{d:path,stroke:'var(--accent)','stroke-width':'2.5',fill:'none','stroke-linecap':'round','stroke-linejoin':'round'}));
+    svg.appendChild(mk('path',{d:path,stroke:'var(--accent)','stroke-width':lineW,fill:'none','stroke-linecap':'round','stroke-linejoin':'round'}));
   }
 
   // Dots
-  sessions.forEach((s,i)=>{
-    svg.appendChild(mk('circle',{cx:xOf(i),cy:yOf(s.weight),r:'4',fill:'var(--accent)',stroke:'var(--surface)','stroke-width':'2','data-idx':i}));
+  if(showDots) sessions.forEach((s,i)=>{
+    svg.appendChild(mk('circle',{cx:xOf(i),cy:yOf(s.weight),r:dotR,fill:'var(--accent)',stroke:'var(--surface)','stroke-width':dotR<4?'1.5':'2','data-idx':i}));
   });
 
-  // X date labels
-  const every=Math.max(1,Math.ceil(N/7));
-  sessions.forEach((s,i)=>{
-    if(i%every!==0&&i!==N-1) return;
-    svg.appendChild(txt(s.date.slice(5),{x:xOf(i),y:H-PAD.b+16,'text-anchor':'middle',fill:'var(--muted)','font-family':"'DM Mono',monospace",'font-size':'9'}));
+  // X date labels — driven by the timeframe, not by how many sessions there are
+  buildTimeTicks(t0,t1,plotW).forEach(tk=>{
+    const x=PAD.l+plotW*Math.min(1,Math.max(0,(tk.t-t0)/span));
+    const anchor=x<PAD.l+14?'start':x>W-PAD.r-14?'end':'middle';
+    svg.appendChild(txt(tk.label,{x,y:H-PAD.b+16,'text-anchor':anchor,fill:'var(--muted)','font-family':"'DM Mono',monospace",'font-size':'9'}));
   });
 
   // Cursor line
@@ -1480,7 +1553,7 @@ function buildProgressSvg(sessions,containerW){
     updateProgressTooltip(best);
   };
 
-  const toSvgX=clientX=>{ const r=svg.getBoundingClientRect(); return clientX-r.left; };
+  const toSvgX=clientX=>{ const r=svg.getBoundingClientRect(); return (clientX-r.left)*(W/(r.width||W)); };
   overlay.addEventListener('mousemove',e=>hit(toSvgX(e.clientX)));
   overlay.addEventListener('touchstart',e=>{e.preventDefault();hit(toSvgX(e.touches[0].clientX));},{passive:false});
   overlay.addEventListener('touchmove',e=>{e.preventDefault();hit(toSvgX(e.touches[0].clientX));},{passive:false});
@@ -1495,8 +1568,9 @@ function buildProgressSvg(sessions,containerW){
     cd.setAttribute('cx',x);cd.setAttribute('cy',y);
   }
 
-  // Position cursor at last point after DOM insert
-  requestAnimationFrame(()=>setCursor(N-1));
+  // Position cursor at the currently selected point after DOM insert
+  const startIdx=Math.min(N-1,Math.max(0,progressChartState?progressChartState.curIdx:N-1));
+  requestAnimationFrame(()=>setCursor(startIdx));
   return svg;
 }
 
