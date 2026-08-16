@@ -68,7 +68,7 @@
   .exercise:last-child{border-bottom:none;}
   .ex-name{font-size:14px;font-weight:600;color:var(--text);}
   .ex-note{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5;}
-  .ex-sets{font-family:'DM Mono',monospace;font-size:13px;color:var(--accent);white-space:nowrap;text-align:right;}
+  .ex-sets{font-family:'DM Mono',monospace;font-size:13px;color:var(--accent);text-align:right;max-width:112px;}
   .timer-btn{display:inline-flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:10px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:4px 9px;border-radius:20px;cursor:pointer;margin-top:5px;transition:all .15s;}
   .timer-btn:hover{border-color:var(--accent);color:var(--accent);}
   .rest-note{background:var(--surface2);border-radius:8px;padding:16px;font-size:13px;color:var(--muted);line-height:1.7;margin-top:16px;}
@@ -358,8 +358,10 @@
     </div>
     <div class="day-body">
       <div class="focus-tags"><span class="tag hot">Fingers</span><span class="tag hot">Quads</span><span class="tag hot">Glutes</span><span class="tag hot">Calves</span><span class="tag hot">Back & Hips</span><span class="tag hot">Anti-rotation core</span><span class="tag">Avoids shoulder fatigue</span></div>
+      <button class="log-btn" onclick="openLogModal('A')">+ LOG THIS SESSION</button>
+      <div id="todaySession-A"></div>
       <div class="phase-label">Finger Strength (first — fingers fresh)</div>
-      <div class="exercise"><div><div class="ex-name">Finger Block — Half Crimp</div><div class="ex-note">No-hang. Four fingers, half crimp, one hand at a time on a climbing block. Ramp to your session max: 8 reps @ 50% → 5 @ 65% → 5 @ 80% → 3–5 @ 90% → 5 @ 100%. Optional advanced work: 3–10 work sets of 3–8 reps. Progress by adding a work set each week; once you're holding 5+ work sets, add ~1 kg/week. Log the session max weight. Do this before the lifts — pulling pre-fatigues your grip.</div><button class="timer-btn" onclick="openTimer(180)">⏱ 3:00 rest</button></div><div class="ex-sets">ramp → work sets</div></div>
+      <div class="exercise"><div><div class="ex-name">Finger Block — Half Crimp</div><div class="ex-note">No-hang. Four fingers, half crimp, one hand at a time on a climbing block. Ramp to your session max: 8 reps @ 50% → 5 @ 65% → 5 @ 80% → 5 @ 100%. Optional advanced: 3–10 work sets of 3–8 reps. Progress by adding a work set each week; once at 5+ work sets, add ~1 kg/week. On a non-climbing day this is your finger stimulus for the week.</div><button class="timer-btn" onclick="openTimer(180)">⏱ 3:00 rest</button></div><div class="ex-sets">3 ramps → work sets</div></div>
       <div class="phase-label">Main Work</div>
       <div class="exercise"><div><div class="ex-name">Barbell Back Squat</div><div class="ex-note">Full depth. Rest 2–3 min. Start moderate, increase weekly.</div><button class="timer-btn" onclick="openTimer(150)">⏱ 2:30 rest</button></div><div class="ex-sets">4 × 6–8</div></div>
       <div class="exercise"><div><div class="ex-name">Romanian Deadlift (RDL)</div><div class="ex-note">Barbell or dumbbells. Feel the hamstring stretch at the bottom — no back rounding.</div><button class="timer-btn" onclick="openTimer(120)">⏱ 2:00 rest</button></div><div class="ex-sets">3 × 8–10</div></div>
@@ -371,8 +373,6 @@
       <div class="exercise"><div><div class="ex-name">Pallof Press (cable or resistance band)</div><div class="ex-note">Anti-rotation. Targets deep core and obliques directly. Attach band to rack or cable to side.</div></div><div class="ex-sets">2 × 10/side</div></div>
       <div class="exercise"><div><div class="ex-name">Side Plank</div><div class="ex-note">Anti-lateral flexion — the missing core plane for back and hip health. Elbow under shoulder, hips up. Progress to adding a hip dip for more range.</div></div><div class="ex-sets">2 × 40s/side</div></div>
       <div class="exercise"><div><div class="ex-name">Reverse Hyperextension (bench)</div><div class="ex-note">Lie face-down, hips at the edge of a flat bench, legs hanging off. Lift legs together with control, squeeze glutes/lower back at top. Directly strengthens erectors and multifidus with less spinal compression than Good Mornings. Key for eliminating lower back problems.</div><button class="timer-btn" onclick="openTimer(60)">⏱ 1:00 rest</button></div><div class="ex-sets">3 × 10</div></div>
-      <button class="log-btn" onclick="openLogModal('A')">+ LOG THIS SESSION</button>
-      <div id="todaySession-A"></div>
     </div>
   </div>
 
@@ -383,9 +383,11 @@
       <span class="chevron">▾</span>
     </div>
     <div class="day-body">
-      <div class="focus-tags"><span class="tag hot">Fingers</span><span class="tag hot">Chest</span><span class="tag hot">Shoulders</span><span class="tag hot">Triceps</span><span class="tag hot">Forearms</span><span class="tag hot">Calves</span><span class="tag">Balances climbing's pulling</span></div>
+      <div class="focus-tags"><span class="tag hot">Fingers</span><span class="tag hot">Chest</span><span class="tag hot">Shoulders</span><span class="tag hot">Triceps</span><span class="tag hot">Forearms</span><span class="tag">Balances climbing's pulling</span></div>
+      <button class="log-btn" onclick="openLogModal('B')">+ LOG THIS SESSION</button>
+      <div id="todaySession-B"></div>
       <div class="phase-label">Finger Strength (first — fingers fresh)</div>
-      <div class="exercise"><div><div class="ex-name">Finger Block — Half Crimp</div><div class="ex-note">No-hang. Four fingers, half crimp, one hand at a time on a climbing block. Ramp to your session max: 8 reps @ 50% → 5 @ 65% → 5 @ 80% → 3–5 @ 90% → 5 @ 100%. Optional advanced work: 3–10 work sets of 3–8 reps. Progress by adding a work set each week; once you're holding 5+ work sets, add ~1 kg/week. Log the session max weight. On a non-climbing day this is your finger stimulus for the week.</div><button class="timer-btn" onclick="openTimer(180)">⏱ 3:00 rest</button></div><div class="ex-sets">ramp → work sets</div></div>
+      <div class="exercise"><div><div class="ex-name">Finger Block — Half Crimp</div><div class="ex-note">No-hang. Four fingers, half crimp, one hand at a time on a climbing block. Ramp to your session max: 8 reps @ 50% → 5 @ 65% → 5 @ 80% → 5 @ 100%. Optional advanced: 3–10 work sets of 3–8 reps. Progress by adding a work set each week; once at 5+ work sets, add ~1 kg/week. On a non-climbing day this is your finger stimulus for the week.</div><button class="timer-btn" onclick="openTimer(180)">⏱ 3:00 rest</button></div><div class="ex-sets">3 ramps → work sets</div></div>
       <div class="phase-label">Main Work</div>
       <div class="exercise"><div><div class="ex-name">Barbell Overhead Press (OHP)</div><div class="ex-note">Standing. The most important push movement for climbers. Builds shoulder stability and directly addresses the pull-dominated imbalance from bouldering.</div><button class="timer-btn" onclick="openTimer(150)">⏱ 2:30 rest</button></div><div class="ex-sets">4 × 6–8</div></div>
       <div class="exercise"><div><div class="ex-name">Dumbbell Incline Bench Press</div><div class="ex-note">45° incline. Emphasises upper chest. Dumbbells allow natural wrist rotation — easier on the shoulders than a barbell.</div><button class="timer-btn" onclick="openTimer(120)">⏱ 2:00 rest</button></div><div class="ex-sets">3 × 8–10</div></div>
@@ -396,10 +398,6 @@
       <div class="exercise"><div><div class="ex-name">Dumbbell Wrist Extension</div><div class="ex-note">Same position, palms down, much lighter dumbbells. Lift the back of the hand as high as it goes, lower slowly. This is the antagonist climbing never trains — the single best insurance against climber's elbow. Go lighter than feels right; the extensors are small.</div><button class="timer-btn" onclick="openTimer(60)">⏱ 1:00 rest</button></div><div class="ex-sets">3 × 15–20</div></div>
       <div class="phase-label">Core</div>
       <div class="exercise"><div><div class="ex-name">Dead Bug</div><div class="ex-note">Lie on back, arms up, knees at 90°. Lower opposite arm and leg toward floor while pressing lower back flat. Much harder than Bird Dog — challenges anti-flexion stability under gravity. Ideal alongside push work.</div></div><div class="ex-sets">2 × 10/side</div></div>
-      <div class="phase-label">Calves</div>
-      <div class="exercise"><div><div class="ex-name">Seated Calf Raise (dumbbell on knee)</div><div class="ex-note">Sit on a bench, dumbbell on your knee, toes on a plate edge for range. Bent knee isolates the soleus — the deeper calf muscle that adds lower thickness. Heavy and slow.</div><button class="timer-btn" onclick="openTimer(90)">⏱ 1:30 rest</button></div><div class="ex-sets">4 × 12–15</div></div>
-      <button class="log-btn" onclick="openLogModal('B')">+ LOG THIS SESSION</button>
-      <div id="todaySession-B"></div>
     </div>
   </div>
 
@@ -411,16 +409,16 @@
     </div>
     <div class="day-body">
       <div class="focus-tags"><span class="tag hot">Fingers</span><span class="tag hot">Hamstrings</span><span class="tag hot">Pull-ups</span><span class="tag hot">Horizontal pull</span><span class="tag hot">Biceps</span><span class="tag hot">Rear delts</span><span class="tag">Complements climbing</span></div>
+      <button class="log-btn" onclick="openLogModal('C')">+ LOG THIS SESSION</button>
+      <div id="todaySession-C"></div>
       <div class="phase-label">Finger Strength (first — fingers fresh)</div>
-      <div class="exercise"><div><div class="ex-name">Finger Block — Half Crimp</div><div class="ex-note">No-hang. Four fingers, half crimp, one hand at a time on a climbing block. Ramp to your session max: 8 reps @ 50% → 5 @ 65% → 5 @ 80% → 3–5 @ 90% → 5 @ 100%. Optional advanced work: 3–10 work sets of 3–8 reps. Progress by adding a work set each week; once you're holding 5+ work sets, add ~1 kg/week. Log the session max weight. Non-negotiable on this day — pull-ups, deadlifts and rows all wreck your grip, so the block has to come first.</div><button class="timer-btn" onclick="openTimer(180)">⏱ 3:00 rest</button></div><div class="ex-sets">ramp → work sets</div></div>
+      <div class="exercise"><div><div class="ex-name">Finger Block — Half Crimp</div><div class="ex-note">No-hang. Four fingers, half crimp, one hand at a time on a climbing block. Ramp to your session max: 8 reps @ 50% → 5 @ 65% → 5 @ 80% → 5 @ 100%. Optional advanced: 3–10 work sets of 3–8 reps. Progress by adding a work set each week; once at 5+ work sets, add ~1 kg/week. On a non-climbing day this is your finger stimulus for the week.</div><button class="timer-btn" onclick="openTimer(180)">⏱ 3:00 rest</button></div><div class="ex-sets">3 ramps → work sets</div></div>
       <div class="phase-label">Main Work</div>
       <div class="exercise"><div><div class="ex-name">Weighted Pull-ups (weight belt)</div><div class="ex-note">Do these first — when fresh. Add 5–10kg. Full range — dead hang to chin above bar. These carry over directly to bouldering power.</div><button class="timer-btn" onclick="openTimer(150)">⏱ 2:30 rest</button></div><div class="ex-sets">4 × 5–6</div></div>
       <div class="exercise"><div><div class="ex-name">Barbell Deadlift</div><div class="ex-note">Conventional. The king of posterior chain. Keep back flat, brace hard, drive the floor away.</div><button class="timer-btn" onclick="openTimer(180)">⏱ 3:00 rest</button></div><div class="ex-sets">4 × 4–6</div></div>
       <div class="exercise"><div><div class="ex-name">Single-Arm Dumbbell Row</div><div class="ex-note">Knee and hand braced on bench, DB hanging from shoulder. Row to hip — not chest. Full stretch at bottom. Hits mid-trap and rhomboids in a plane climbing never loads. Key for scapular health.</div><button class="timer-btn" onclick="openTimer(60)">⏱ 1:00 rest</button></div><div class="ex-sets">3 × 10–12/side</div></div>
       <div class="exercise"><div><div class="ex-name">Cable Face Pull (rope attachment)</div><div class="ex-note">Crucial for rotator cuff health as a climber. Pull to face level, externally rotate at the top. Never skip this.</div><button class="timer-btn" onclick="openTimer(60)">⏱ 1:00 rest</button></div><div class="ex-sets">3 × 15</div></div>
       <div class="exercise"><div><div class="ex-name">Incline Dumbbell Curl</div><div class="ex-note">Long-head bicep emphasis. Let the arm hang back fully — the stretch at the bottom is where growth happens. Climbers have short-head bias from pulling.</div><button class="timer-btn" onclick="openTimer(60)">⏱ 1:00 rest</button></div><div class="ex-sets">3 × 10–12</div></div>
-      <button class="log-btn" onclick="openLogModal('C')">+ LOG THIS SESSION</button>
-      <div id="todaySession-C"></div>
     </div>
   </div>
 
@@ -709,14 +707,15 @@ const FB_PROTOCOL = {
     ['Warm-up','8 reps','50%'],
     ['Ramp',   '5 reps','65%'],
     ['Ramp',   '5 reps','80%'],
-    ['Ramp',   '3–5 reps','90%'],
     ['Work',   '5 reps','100%'],
   ],
   advanced:'Advanced (optional): 3–10 work sets of 3–8 reps.',
-  progression:'Progression: add a work set each week first. Once you hold 5+ work sets, add ~1 kg/week.',
-  logging:'Log the session max — the 100% weight.'
+  progression:'Progress by adding a work set each week; once at 5+ work sets, add ~1 kg/week.',
+  logging:'Log the session max weight and the number of work sets.'
 };
-const FB_EX = (id)=>({id,name:'Finger Block — Half Crimp',sets:'ramp → work sets',w:true,protocol:FB_PROTOCOL});
+// repLabel relabels the second input (stored in the `reps` field) — the finger
+// block tracks work sets, not reps.
+const FB_EX = (id)=>({id,name:'Finger Block — Half Crimp',sets:'3 ramps → work sets',w:true,repLabel:'sets',protocol:FB_PROTOCOL});
 
 const DAYS = {
   A: { name:'Day A — Lower Body, Calves & Core', exercises:[
@@ -741,7 +740,6 @@ const DAYS = {
     {id:'B-wcurl', name:'Dumbbell Wrist Curl',            sets:'3 × 12–15', w:true },
     {id:'B-wext',  name:'Dumbbell Wrist Extension',       sets:'3 × 15–20', w:true },
     {id:'B-dd',    name:'Dead Bug',                       sets:'2 × 10/side',w:false},
-    {id:'B-calf',  name:'Seated Calf Raise (dumbbell)',   sets:'4 × 12–15', w:true },
   ]},
   C: { name:'Day C — Posterior Chain & Arms', exercises:[
     {id:'C-climb', name:'Bouldering / Climbing',              sets:'session',    w:false},
@@ -888,7 +886,7 @@ function renderLogExs(){
       <div class="ex-log-extra">
       ${ex.w?`<div class="ex-log-stack">
         <div class="stack-row"><input class="weight-input" type="number" step="0.5" min="0" placeholder="kg" value="${s.weight}" oninput="updW('${ex.id}',this.value)"><span class="stack-unit">kg</span></div>
-        <div class="stack-row"><input class="reps-input" type="number" step="1" min="0" placeholder="reps" value="${s.reps}" oninput="updReps('${ex.id}',this.value)"><span class="stack-unit">reps</span></div>
+        <div class="stack-row"><input class="reps-input" type="number" step="1" min="0" placeholder="${ex.repLabel||'reps'}" value="${s.reps}" oninput="updReps('${ex.id}',this.value)"><span class="stack-unit">${ex.repLabel||'reps'}</span></div>
       </div><div class="target-toggle ${s.hitTarget?'hit':''}" onclick="toggleHit('${ex.id}',this)" title="Hit target reps at this weight"></div>`:''}
       </div>
       ${protoHtml(ex)}
@@ -896,6 +894,21 @@ function renderLogExs(){
     c.appendChild(row);
   });
 }
+// Logs store the second value in `reps` for every exercise; some exercises just
+// label it differently (finger block counts work sets). Looked up from DAYS by
+// id so old logs pick up the right word too.
+function exDef(id){
+  for(const d of ['A','B','C']){ const e=DAYS[d].exercises.find(x=>x.id===id); if(e) return e; }
+  return null;
+}
+function repUnit(id){ const e=exDef(id); return (e&&e.repLabel)||'reps'; }
+// Only spell the unit out when it isn't the default, so ordinary lifts stay compact
+function repsBadge(ex){
+  if(!ex.reps) return '';
+  const u=repUnit(ex.id);
+  return ' × '+ex.reps+(u==='reps'?'':' '+u);
+}
+
 function protoHtml(ex){
   if(!ex.protocol) return '';
   const p=ex.protocol;
@@ -1165,7 +1178,7 @@ function showDayLog(ds){
   let h=`<div style="margin:12px 0 16px;padding-top:12px;border-top:1px solid var(--border);"><div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);margin-bottom:10px;">${ds}</div>`;
   logs.forEach(log=>{
     h+=`<div class="log-entry"><div class="log-entry-header"><div><div class="log-entry-date">${log.dayName||log.day}</div></div></div>`;
-    log.exercises.forEach(ex=>{h+=`<div class="log-ex-item"><span class="${ex.done?'log-ex-done':'log-ex-skip'}">${ex.done?'✓':'–'} ${ex.name}</span><span class="log-w-badge">${ex.w&&ex.weight?ex.weight+' kg'+(ex.reps?' × '+ex.reps:''):ex.sets}${ex.hitTarget?' <span style="color:var(--accent2)">★</span>':''}</span></div>`;});
+    log.exercises.forEach(ex=>{h+=`<div class="log-ex-item"><span class="${ex.done?'log-ex-done':'log-ex-skip'}">${ex.done?'✓':'–'} ${ex.name}</span><span class="log-w-badge">${ex.w&&ex.weight?ex.weight+' kg'+repsBadge(ex):ex.sets}${ex.hitTarget?' <span style="color:var(--accent2)">★</span>':''}</span></div>`;});
     if(log.notes) h+=`<div style="margin-top:8px;font-size:12px;color:#c4c4bc;font-style:italic;">"${log.notes}"</div>`;
     h+='</div>';
   });
@@ -1196,7 +1209,7 @@ function renderTodayTrainingSessions(){
         <div class="log-entry-date">${log.date}</div>
         <button class="log-entry-delete" onclick="delTodaySession('${day}')">✕</button>
       </div>
-      ${log.exercises.map(ex=>`<div class="log-ex-item"><span class="${ex.done?'log-ex-done':'log-ex-skip'}">${ex.done?'✓':'–'} ${ex.name}</span><span class="log-w-badge">${ex.w&&ex.weight?ex.weight+' kg'+(ex.reps?' × '+ex.reps:''):ex.sets}${ex.hitTarget?' <span style="color:var(--accent2)">★</span>':''}</span></div>`).join('')}
+      ${log.exercises.map(ex=>`<div class="log-ex-item"><span class="${ex.done?'log-ex-done':'log-ex-skip'}">${ex.done?'✓':'–'} ${ex.name}</span><span class="log-w-badge">${ex.w&&ex.weight?ex.weight+' kg'+repsBadge(ex):ex.sets}${ex.hitTarget?' <span style="color:var(--accent2)">★</span>':''}</span></div>`).join('')}
       ${log.notes?`<div style="margin-top:8px;font-size:12px;color:#c4c4bc;font-style:italic;">"${log.notes}"</div>`:''}
     </div>`;
   });
@@ -1410,7 +1423,7 @@ function openProgressChart(exId,exName){
     b.classList.toggle('empty',!has);
   });
 
-  progressChartState={curIdx:allSessions.length-1,allSessions,sessions:allSessions,filter:'ALL'};
+  progressChartState={curIdx:allSessions.length-1,allSessions,sessions:allSessions,filter:'ALL',exId};
   drawChart();
 }
 
@@ -1637,7 +1650,7 @@ function updateProgressTooltip(idx){
   tt.style.display='';
   tt.innerHTML=`
     <div class="chart-tt-date">${s.date}</div>
-    <div class="chart-tt-main">${s.weight} <span class="chart-tt-unit">kg</span>${s.reps?` <span class="chart-tt-x">×</span> <span class="chart-tt-reps">${s.reps}</span>`:''}${s.hitTarget?' <span class="chart-tt-star">★</span>':''}</div>`;
+    <div class="chart-tt-main">${s.weight} <span class="chart-tt-unit">kg</span>${s.reps?` <span class="chart-tt-x">×</span> <span class="chart-tt-reps">${s.reps}</span> <span class="chart-tt-unit">${repUnit(progressChartState.exId)}</span>`:''}${s.hitTarget?' <span class="chart-tt-star">★</span>':''}</div>`;
 }
 
 // ════════════════════════════════════════

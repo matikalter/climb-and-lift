@@ -70,7 +70,7 @@ iOS web app: `viewport-fit=cover`, `env(safe-area-inset-top)`, `touch-action: ma
 ```
 A: Day A — Lower Body, Calves & Core
   A-climb  Bouldering / Climbing       session (not weighted)
-  A-fb     Finger Block — Half Crimp   ramp → work sets  (protocol: FB_PROTOCOL)
+  A-fb     Finger Block — Half Crimp   3 ramps → work sets  (protocol: FB_PROTOCOL, repLabel: sets)
   A-squat  Barbell Back Squat          4 × 6–8
   A-rdl    Romanian Deadlift           3 × 8–10
   A-ht     Barbell Hip Thrust          3 × 10–12
@@ -82,7 +82,7 @@ A: Day A — Lower Body, Calves & Core
 
 B: Day B — Push & Shoulders
   B-climb  Bouldering / Climbing       session (bw)
-  B-fb     Finger Block — Half Crimp   ramp → work sets  (protocol: FB_PROTOCOL)
+  B-fb     Finger Block — Half Crimp   3 ramps → work sets  (protocol: FB_PROTOCOL, repLabel: sets)
   B-ohp    Barbell OHP                 4 × 6–8
   B-inc    DB Incline Bench            3 × 8–10
   B-dips   Weighted Dips               3 × 8–10
@@ -90,11 +90,10 @@ B: Day B — Push & Shoulders
   B-wcurl  DB Wrist Curl               3 × 12–15
   B-wext   DB Wrist Extension          3 × 15–20
   B-dd     Dead Bug                    2 × 10/side (bw)
-  B-calf   Seated Calf Raise           4 × 12–15
 
 C: Day C — Posterior Chain & Arms
   C-climb  Bouldering / Climbing       session (bw)
-  C-fb     Finger Block — Half Crimp   ramp → work sets  (protocol: FB_PROTOCOL)
+  C-fb     Finger Block — Half Crimp   3 ramps → work sets  (protocol: FB_PROTOCOL, repLabel: sets)
   C-pu     Weighted Pull-ups           4 × 5–6
   C-dl     Barbell Deadlift            4 × 4–6
   C-row    Single-Arm DB Row           3 × 10–12/side
@@ -117,16 +116,25 @@ C: Day C — Posterior Chain & Arms
 - Wrist curl + extension on **Day B only**, not Day C. Day B is the least grip-taxing day, so the forearms are fresh; Day C already stacks pull-ups, deadlift, rows and curls. Wrist extension is the antagonist climbing never trains — the main defence against climber's elbow (lateral epicondylitis).
 
 ### Finger block protocol (`FB_PROTOCOL`)
-Ramp to a session max: 8 reps @ 50% → 5 @ 65% → 5 @ 80% → 3–5 @ 90% → 5 @ 100%.
+Ramp to a session max: 8 reps @ 50% → 5 @ 65% → 5 @ 80% → 5 @ 100%.
 Advanced (optional): 3–10 work sets of 3–8 reps.
-Progression: add a work set each week first; once holding 5+ work sets, +~1 kg/week.
-The logged weight is the session max (the 100% load).
+Progression: add a work set each week first; once at 5+ work sets, +~1 kg/week.
+Logged values are the session max weight and the number of **work sets** (not reps).
 
 `protocol` is an optional field on a DAYS exercise. `saveSession()` only copies
 `id/name/sets/done/weight/reps/w/hitTarget` into logs, so `protocol` never reaches
 `localStorage` or an export — it can be edited freely without touching the data format.
 In the log modal it renders via `protoHtml(ex)` behind a `▾ PROTOCOL` disclosure
 (`toggleProto`); `.ex-log-row` is `flex-wrap:wrap` so the panel can take a full-width row.
+
+### `repLabel` — relabelling the second input
+Logs always store the second value in the `reps` field; `repLabel` only changes the
+word shown for it (the finger block counts **work sets**). `repLabel` lives in DAYS,
+not in logs, so `repUnit(id)` / `exDef(id)` look it up by exercise id — meaning old
+logs pick up the right word too. `repsBadge(ex)` spells the unit out only when it
+isn't the default, so ordinary lifts still read `80 kg × 7` while the finger block
+reads `32 kg × 6 sets`. Adding another such exercise is just `repLabel:'...'` — no
+data migration, no `_version` bump.
 
 ## Key JS functions
 | Function | Purpose |
@@ -178,6 +186,8 @@ Version 4. Import merges by date+day key (existing entries not overwritten by im
 - **Date parsing**: dates are `YYYY-MM-DD` strings. Parse with `new Date(d+'T00:00:00')` (the `tOf` helper) so they land on local midnight — bare `new Date('YYYY-MM-DD')` parses as UTC and shifts the day in negative-offset timezones. Same reason `fmtYMD` formats by hand instead of using `toISOString()`.
 - **Chart overflow**: don't reintroduce `overflow-x:auto` on `.chart-wrap`. The chart is sized to fit; if something overflows, the sizing is wrong.
 - **Exercises live in two places**: `DAYS` drives the log modal and Progress tab, but the Training tab day cards are hand-written HTML (`.day-card` → `.exercise` blocks with `ex-name` / `ex-note` / `ex-sets`). Adding or renaming an exercise means editing both, in the same order. The day cards deliberately omit the climbing entry.
+- **Day card order**: inside `.day-body` it's focus tags → `+ LOG THIS SESSION` → `#todaySession-X` → phase labels and exercises. The log button is at the top on purpose so it's reachable without scrolling past the whole plan.
+- **`.ex-sets` width**: capped at `112px` and allowed to wrap. Every numeric set string fits on one line under that cap (`3 × 10–12/side` is the longest at ~110px); only phrase-style values like `3 ramps → work sets` wrap, which keeps them from crushing the note column. Don't put `white-space:nowrap` back.
 
 ## Verifying UI changes
 Chromium + Playwright are available in the web sandbox and are the fastest way to
