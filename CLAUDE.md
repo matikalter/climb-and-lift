@@ -63,6 +63,12 @@ iOS web app: `viewport-fit=cover`, `env(safe-area-inset-top)`, `touch-action: ma
 ```
 `hitTarget` (bool) = user marked they hit the target rep range at that weight. Additive field — old logs without it default to false.
 
+`reps` is **free text**, not a number — the input is `type="text"` so a per-set
+breakdown like `"6-6-3-3"` can be entered and is stored and displayed verbatim.
+Nothing does arithmetic on it. Because it reaches markup in several places, run it
+through `escHtml()` / `escAttr()` when interpolating (the badge, the tooltip, and
+the input's `value=`).
+
 ### weightLogs: `[{date, kg}]`
 ### nutLogs: `{[dateStr]: [{name, kcal, prot, carb, fat}]}`
 
@@ -144,6 +150,9 @@ data migration, no `_version` bump.
 | `saveSession()` | Saves current logState to workoutLogs |
 | `renderProgressTab()` | Renders exercise list in Progress tab, grouped by Day A/B/C |
 | `openProgressChart(exId, exName)` | Opens the chart view for one exercise |
+| `gotoProgress(exId)` | Training tab 📈 button — jumps straight to that exercise's chart |
+| `exDef(id)` / `repUnit(id)` | Look an exercise up in DAYS by id |
+| `escHtml(v)` / `escAttr(v)` | Escape free-text values (reps) headed for markup |
 | `setChartFilter(btn, tf)` | Applies a `1M` / `3M` / `1Y` / `ALL` timeframe |
 | `chartDomain()` | Returns `[t0, t1]` — the x-axis time window for the active filter |
 | `drawChart()` | Measures the container and rebuilds the SVG to fit |
@@ -171,8 +180,12 @@ both portrait and landscape. Getting that right depends on a few things:
   timeframes read as a trend line rather than a chain of beads.
 - `window.resize` / `orientationchange` re-run `drawChart()` (debounced 150ms).
 - Filter pills carry `data-tf`; ones with no sessions in range get `.empty` (dimmed).
-- `progressChartState = {curIdx, allSessions, sessions, filter}` — `allSessions` is
-  the unfiltered set, `sessions` is what's currently drawn.
+- `progressChartState = {curIdx, allSessions, sessions, filter, exId}` — `allSessions`
+  is the unfiltered set, `sessions` is what's currently drawn.
+- `progressListScrollY` remembers where the exercise list was scrolled when the
+  chart opened; `closeProgressChart()` restores it inside a `requestAnimationFrame`
+  (the list has to be laid out again before the scroll target exists). Entering via
+  `gotoProgress()` resets it to 0, so the back arrow lands at the top of the list.
 
 ## Export/import format
 Version 4. Import merges by date+day key (existing entries not overwritten by import unless same date+day). New fields on exercise objects are additive — old exports without them still import safely. Never bump `_version` for additive-only changes.
@@ -187,6 +200,7 @@ Version 4. Import merges by date+day key (existing entries not overwritten by im
 - **Chart overflow**: don't reintroduce `overflow-x:auto` on `.chart-wrap`. The chart is sized to fit; if something overflows, the sizing is wrong.
 - **Exercises live in two places**: `DAYS` drives the log modal and Progress tab, but the Training tab day cards are hand-written HTML (`.day-card` → `.exercise` blocks with `ex-name` / `ex-note` / `ex-sets`). Adding or renaming an exercise means editing both, in the same order. The day cards deliberately omit the climbing entry.
 - **Day card order**: inside `.day-body` it's focus tags → `+ LOG THIS SESSION` → `#todaySession-X` → phase labels and exercises. The log button is at the top on purpose so it's reachable without scrolling past the whole plan.
+- **Graph buttons**: every weighted (`w:true`) day-card exercise carries a `.graph-btn` calling `gotoProgress('<id>')`, sitting right after the `.timer-btn`. Bodyweight exercises get none — the Progress tab only lists weighted lifts. Adding a weighted exercise means adding its graph button too, and the hardcoded id in the card must match the `DAYS` id exactly (nothing validates this at runtime).
 - **`.ex-sets` width**: capped at `112px` and allowed to wrap. Every numeric set string fits on one line under that cap (`3 × 10–12/side` is the longest at ~110px); only phrase-style values like `3 ramps → work sets` wrap, which keeps them from crushing the note column. Don't put `white-space:nowrap` back.
 
 ## Verifying UI changes
