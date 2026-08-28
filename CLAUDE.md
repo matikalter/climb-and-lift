@@ -76,7 +76,7 @@ the input's `value=`).
 ```
 A: Day A — Lower Body, Calves & Core
   A-climb  Bouldering / Climbing       session (not weighted)
-  A-fb     Finger Block — Half Crimp   3 ramps → work sets  (protocol: FB_PROTOCOL, repLabel: sets)
+  fb       Finger Block — Half Crimp   3 ramps → work sets  (shared id — see below)
   A-squat  Barbell Back Squat          4 × 6–8
   A-rdl    Romanian Deadlift           3 × 8–10
   A-ht     Barbell Hip Thrust          3 × 10–12
@@ -88,7 +88,7 @@ A: Day A — Lower Body, Calves & Core
 
 B: Day B — Push & Shoulders
   B-climb  Bouldering / Climbing       session (bw)
-  B-fb     Finger Block — Half Crimp   3 ramps → work sets  (protocol: FB_PROTOCOL, repLabel: sets)
+  fb       Finger Block — Half Crimp   3 ramps → work sets  (shared id — see below)
   B-ohp    Barbell OHP                 4 × 6–8
   B-inc    DB Incline Bench            3 × 8–10
   B-dips   Weighted Dips               3 × 8–10
@@ -99,7 +99,7 @@ B: Day B — Push & Shoulders
 
 C: Day C — Posterior Chain & Arms
   C-climb  Bouldering / Climbing       session (bw)
-  C-fb     Finger Block — Half Crimp   3 ramps → work sets  (protocol: FB_PROTOCOL, repLabel: sets)
+  fb       Finger Block — Half Crimp   3 ramps → work sets  (shared id — see below)
   C-pu     Weighted Pull-ups           4 × 5–6
   C-dl     Barbell Deadlift            4 × 4–6
   C-row    Single-Arm DB Row           3 × 10–12/side
@@ -133,6 +133,23 @@ Logged values are the session max weight and the number of **work sets** (not re
 In the log modal it renders via `protoHtml(ex)` behind a `▾ PROTOCOL` disclosure
 (`toggleProto`); `.ex-log-row` is `flex-wrap:wrap` so the panel can take a full-width row.
 
+### `shared` — one exercise living on several days
+The finger block appears on all three days but is **one** exercise, so all three
+DAYS entries carry the same id `fb` (via `FB_EX()`) plus `shared:true`. Sharing the
+id is what makes it share a log and a chart — every query keys off the exercise id,
+so nothing else had to change. Consequences to keep in mind:
+- `renderProgressTab()` lists `shared` exercises once under an **All Days** header
+  and excludes them from the per-day groups, so the row isn't repeated three times.
+- `openLogModal()` prefills via `lastLoggedValues(id)`, which scans *all* logs for
+  the most recent entry containing that id. For a day-specific exercise that's
+  equivalent to its own day's last session; for a shared one it picks up whichever
+  day you last did it on.
+- Older logs used per-day ids (`A-fb` / `B-fb` / `C-fb`). `migrateFingerBlockIds()`
+  folds those onto `fb` on load and after every import, so old sessions stay in the
+  chart. Don't remove it — backups still in the wild contain the old ids.
+- Two sessions on the same date (e.g. Day A and Day B both logged today) produce two
+  chart points at the same x. Harmless, and honest about the data.
+
 ### `repLabel` — relabelling the second input
 Logs always store the second value in the `reps` field; `repLabel` only changes the
 word shown for it (the finger block counts **work sets**). `repLabel` lives in DAYS,
@@ -152,6 +169,8 @@ data migration, no `_version` bump.
 | `openProgressChart(exId, exName)` | Opens the chart view for one exercise |
 | `gotoProgress(exId)` | Training tab 📈 button — jumps straight to that exercise's chart |
 | `exDef(id)` / `repUnit(id)` | Look an exercise up in DAYS by id |
+| `lastLoggedValues(exId)` | Most recent weight/reps for one exercise, across all days |
+| `migrateFingerBlockIds(logs)` | Folds legacy `A-fb`/`B-fb`/`C-fb` onto the shared `fb` id |
 | `escHtml(v)` / `escAttr(v)` | Escape free-text values (reps) headed for markup |
 | `setChartFilter(btn, tf)` | Applies a `1M` / `3M` / `1Y` / `ALL` timeframe |
 | `chartDomain()` | Returns `[t0, t1]` — the x-axis time window for the active filter |
