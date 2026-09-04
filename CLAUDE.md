@@ -78,6 +78,7 @@ A: Day A — Lower Body, Calves & Core
   A-climb  Bouldering / Climbing       session (not weighted)
   fb       Finger Block — Half Crimp   3 ramps → work sets  (shared id — see below)
   A-squat  Barbell Back Squat          4 × 6–8
+  A-bss    Bulgarian Split Squat (DB)  3 × 8–10/side
   A-rdl    Romanian Deadlift           3 × 8–10
   A-ht     Barbell Hip Thrust          3 × 10–12
   A-calf   Standing Calf Raise         4 × 10–12
@@ -105,6 +106,7 @@ C: Day C — Posterior Chain & Arms
   C-row    Single-Arm DB Row           3 × 10–12/side
   C-fp     Cable Face Pull             3 × 15
   C-curl   Incline DB Curl             3 × 10–12
+  C-carry  Suitcase Carry              3 × 30m/side  (repLabel: m)
 ```
 
 ## Workout plan rationale
@@ -119,6 +121,8 @@ C: Day C — Posterior Chain & Arms
 - Face pulls on Day C: rotator cuff / rear delt, critical for shoulder health in climbers
 - Single-Arm DB Row on Day C: horizontal pull, addresses mid-trap/rhomboid gap left by climbing's vertical-pull dominance
 - Finger block on **all three days**, always immediately after climbing and **before the lifts** — max-effort finger work needs a fresh grip, and pull-ups/deadlift/row would pre-fatigue it. Target ≥2×/week; it's the finger stimulus on non-climbing days.
+- Bulgarian Split Squat on Day A, straight after the back squat — keeps the knee-dominant work in one block before the hinges (RDL, hip thrust), and unilateral loading exposes the left/right imbalance a barbell hides.
+- Suitcase Carry **last** on Day C. Anti-lateral-flexion core plus grip, and it has to come after pull-ups/deadlift/rows/curls or it would compromise all of them. `repLabel:'m'` so the second field logs metres, not reps.
 - Wrist curl + extension on **Day B only**, not Day C. Day B is the least grip-taxing day, so the forearms are fresh; Day C already stacks pull-ups, deadlift, rows and curls. Wrist extension is the antagonist climbing never trains — the main defence against climber's elbow (lateral epicondylitis).
 
 ### Finger block protocol (`FB_PROTOCOL`)
