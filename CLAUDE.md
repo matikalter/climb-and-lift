@@ -169,6 +169,7 @@ data migration, no `_version` bump.
 | `showTab(id, el)` | Switches active section |
 | `openLogModal(day)` | Opens workout log modal for day A/B/C |
 | `saveSession()` | Saves current logState to workoutLogs |
+| `sessionsFor(exId)` | Charted history for one exercise — **done + weight only** |
 | `renderProgressTab()` | Renders exercise list in Progress tab, grouped by Day A/B/C |
 | `openProgressChart(exId, exName)` | Opens the chart view for one exercise |
 | `gotoProgress(exId)` | Training tab 📈 button — jumps straight to that exercise's chart |
@@ -220,6 +221,7 @@ Version 4. Import merges by date+day key (existing entries not overwritten by im
 - **iOS :hover persistence**: use `:active` not `:hover` for delete/action buttons to avoid sticky red X bugs on touch devices.
 - **cherry-pick caution**: don't cherry-pick commits from the stale feature branch onto main without careful inspection — the stale branch has old/diverged code.
 - **Date parsing**: dates are `YYYY-MM-DD` strings. Parse with `new Date(d+'T00:00:00')` (the `tOf` helper) so they land on local midnight — bare `new Date('YYYY-MM-DD')` parses as UTC and shifts the day in negative-offset timezones. Same reason `fmtYMD` formats by hand instead of using `toISOString()`.
+- **A logged weight does not mean the exercise was done.** `openLogModal()` pre-fills weight/reps from your last session, and `saveSession()` stores every row whether or not it was ticked — so a skipped exercise is saved with `done:false` and a stale weight. Anything that treats a log entry as a performed set must check `done`, not just `weight`; that's what `sessionsFor()` is for, and charting on `weight` alone previously plotted phantom points for skipped sessions. The Log tab deliberately still lists skipped rows, prefixed `–` instead of `✓`.
 - **Chart overflow**: don't reintroduce `overflow-x:auto` on `.chart-wrap`. The chart is sized to fit; if something overflows, the sizing is wrong.
 - **Exercises live in two places**: `DAYS` drives the log modal and Progress tab, but the Training tab day cards are hand-written HTML (`.day-card` → `.exercise` blocks with `ex-name` / `ex-note` / `ex-sets`). Adding or renaming an exercise means editing both, in the same order. The day cards deliberately omit the climbing entry.
 - **Day card order**: inside `.day-body` it's focus tags → `+ LOG THIS SESSION` → `#todaySession-X` → phase labels and exercises. The log button is at the top on purpose so it's reachable without scrolling past the whole plan.

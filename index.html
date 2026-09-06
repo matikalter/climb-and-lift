@@ -1396,19 +1396,27 @@ function importData(){
 // ════════════════════════════════════════
 let progressChartState=null;
 
+// Charted history for one exercise. A session only counts if the exercise was
+// actually ticked off: weights are pre-filled from your last session, so a row
+// you skipped still carries a weight and would otherwise plot a phantom point.
+function sessionsFor(exId){
+  return workoutLogs
+    .map(l=>{
+      const e=(l.exercises||[]).find(x=>x.id===exId&&x.done&&x.weight);
+      return e?{date:l.date,weight:parseFloat(e.weight),reps:e.reps||'',hitTarget:!!e.hitTarget}:null;
+    })
+    .filter(s=>s&&!isNaN(s.weight))
+    .sort((a,b)=>a.date.localeCompare(b.date));
+}
+
 function renderProgressTab(){
   const listEl=document.getElementById('progressExList');
   const chartEl=document.getElementById('progressChartView');
   listEl.style.display=''; chartEl.style.display='none';
   progressChartState=null;
 
-  const getSessions=exId=>workoutLogs
-    .filter(l=>l.exercises&&l.exercises.some(e=>e.id===exId&&e.weight))
-    .map(l=>{ const e=l.exercises.find(e=>e.id===exId); return {date:l.date,weight:parseFloat(e.weight),reps:e.reps||'',hitTarget:!!e.hitTarget}; })
-    .sort((a,b)=>a.date.localeCompare(b.date));
-
   const row=ex=>{
-    const sessions=getSessions(ex.id);
+    const sessions=sessionsFor(ex.id);
     const pr=sessions.length?Math.max(...sessions.map(s=>s.weight)):null;
     return `<div class="prog-ex-row" onclick="openProgressChart('${ex.id}','${ex.name.replace(/'/g,"&#39;")}')">
       <div class="prog-ex-body">
@@ -1454,10 +1462,7 @@ function todayMs(){ const d=new Date(); d.setHours(0,0,0,0); return d.getTime();
 let progressListScrollY=0;
 
 function openProgressChart(exId,exName){
-  const allSessions=workoutLogs
-    .filter(l=>l.exercises&&l.exercises.some(e=>e.id===exId&&e.weight))
-    .map(l=>{ const e=l.exercises.find(e=>e.id===exId); return {date:l.date,weight:parseFloat(e.weight),reps:e.reps||'',hitTarget:!!e.hitTarget}; })
-    .sort((a,b)=>a.date.localeCompare(b.date));
+  const allSessions=sessionsFor(exId);
 
   progressListScrollY=window.scrollY||window.pageYOffset||0;
   document.getElementById('progressExList').style.display='none';
