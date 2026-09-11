@@ -167,8 +167,11 @@ data migration, no `_version` bump.
 | Function | Purpose |
 |---|---|
 | `showTab(id, el)` | Switches active section |
-| `openLogModal(day)` | Opens workout log modal for day A/B/C |
-| `saveSession()` | Saves current logState to workoutLogs |
+| `openLogModal(day, date?)` | Opens the log modal for day A/B/C; `date` defaults to today |
+| `loadLogState()` | Fills `logState` for `curDay`+`logDate` — loads an existing session, else pre-fills |
+| `setLogDate(v)` / `stepLogDate(n)` | Move the modal to another date (clamped at today) |
+| `saveSession()` | Saves current logState to workoutLogs, dated `logDate` |
+| `ymd(d)` / `todayStr()` / `shiftDate(ds,n)` / `dateLabel(ds)` | Local-date helpers |
 | `sessionsFor(exId)` | Charted history for one exercise — **done + weight only** |
 | `renderProgressTab()` | Renders exercise list in Progress tab, grouped by Day A/B/C |
 | `openProgressChart(exId, exName)` | Opens the chart view for one exercise |
@@ -210,6 +213,32 @@ both portrait and landscape. Getting that right depends on a few things:
   chart opened; `closeProgressChart()` restores it inside a `requestAnimationFrame`
   (the list has to be laid out again before the scroll target exists). Entering via
   `gotoProgress()` resets it to 0, so the back arrow lands at the top of the list.
+
+## Backdating and editing sessions
+`logDate` (defaults to `todayStr()`) is the date the modal saves to — `saveSession()`
+uses it, not "now". Two entry points set it:
+- The **date stepper** in the modal header (`renderLogDateNav`): `‹ [date input] ›`,
+  capped at today. One tap back covers the usual "forgot to log yesterday".
+- The **Log tab calendar**: `showDayLog(ds)` offers `+ DAY A/B/C` for whichever
+  sessions aren't recorded on that date, and an `✎ EDIT` button on each that is.
+  Future dates get no buttons.
+
+Backdating and editing are the same code path: if `logDate`+`curDay` already has a
+session, `loadLogState()` loads it (done ticks, weights, reps, stars, notes) instead
+of pre-filling, so re-opening a date edits rather than silently overwriting.
+
+Two things that are easy to get wrong here:
+- **Pre-fill must be date-bounded.** `lastLoggedValues(exId, notAfter)` ignores
+  sessions *after* the date being logged — otherwise logging Tuesday on Thursday
+  would pre-fill Wednesday's numbers into a session that predates them. Same-date
+  sessions still count, so a shared lift carries Day A → Day B within one date.
+- **`todayStr()` must be local.** It used to be `toISOString().split('T')[0]`, which
+  is UTC and disagrees with the calendar's locally-built `data-ds` — a late-evening
+  session would land on the wrong date. Use `ymd()`; never `toISOString()` for a
+  calendar date.
+
+A backdated save won't show under the Training tab day card (that panel is today
+only), so the toast names the date: `Saved to Tue 8 Sep ✓`.
 
 ## Export/import format
 Version 4. Import merges by date+day key (existing entries not overwritten by import unless same date+day). New fields on exercise objects are additive — old exports without them still import safely. Never bump `_version` for additive-only changes.

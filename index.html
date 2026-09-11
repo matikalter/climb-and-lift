@@ -156,6 +156,22 @@
   .modal-box{background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:24px 20px 48px;width:100%;max-width:520px;max-height:93vh;overflow-y:auto;}
   .modal-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;margin-bottom:4px;color:var(--text);}
   .modal-sub{font-size:13px;color:var(--muted);margin-bottom:18px;}
+  .log-date-nav{display:flex;align-items:center;gap:8px;margin-top:8px;}
+  .log-date-step{width:34px;height:34px;flex-shrink:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;}
+  .log-date-step:active{border-color:var(--accent);color:var(--accent);}
+  .log-date-step:disabled{opacity:.3;cursor:default;}
+  /* 16px keeps iOS from zooming the page when the picker opens */
+  .log-date-input{flex:1;min-width:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:'DM Mono',monospace;font-size:16px;color:var(--accent);text-align:center;height:34px;}
+  .log-date-input:focus{outline:none;border-color:var(--accent);}
+  .log-date-hint{font-size:11px;color:var(--muted);margin-top:7px;line-height:1.4;}
+  .log-date-hint.editing{color:var(--accent2);}
+  .day-log-actions{margin:4px 0 16px;padding-top:12px;border-top:1px solid var(--border);}
+  .day-log-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:9px;}
+  .day-log-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .day-log-btn{flex:1;min-width:80px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;padding:9px 6px;cursor:pointer;transition:all .15s;}
+  .day-log-btn:active{background:var(--accent);color:#0f0f0d;border-color:var(--accent);}
+  .log-entry-edit{background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.5px;padding:3px 8px;cursor:pointer;flex-shrink:0;}
+  .log-entry-edit:active{border-color:var(--accent);color:var(--accent);}
   .modal-close{float:right;background:var(--surface2);border:none;color:var(--muted);padding:6px 13px;border-radius:6px;cursor:pointer;font-family:'DM Mono',monospace;font-size:11px;margin-top:-2px;}
   .modal-section{font-family:'DM Mono',monospace;font-size:10px;color:var(--accent2);letter-spacing:1.5px;text-transform:uppercase;margin:16px 0 8px;}
 
@@ -881,28 +897,74 @@ function filterDays(t,btn){
 // WORKOUT LOG MODAL
 // ════════════════════════════════════════
 let curDay=null, logState={};
+let logDate=todayStr();   // the date the modal will save to; defaults to today
 
 // Most recent logged values for one exercise, across every day. For a day-specific
 // exercise that's just its own day's last session; for a shared one like the finger
 // block it picks up whichever day you last did it on.
-function lastLoggedValues(exId){
+// Most recent logged values for one exercise, across every day. `notAfter` keeps
+// backdating honest: when logging Tuesday on Thursday, Wednesday's numbers must
+// not pre-fill a session that happened before them. Same-date sessions still
+// count, so a shared lift carries across Day A → Day B on one date.
+function lastLoggedValues(exId,notAfter){
   let best=null;
   workoutLogs.forEach(l=>{
+    if(notAfter&&l.date>notAfter) return;
     const e=(l.exercises||[]).find(x=>x.id===exId);
     if(e&&(e.weight||e.reps)&&(!best||l.date>best.date)) best={date:l.date,weight:e.weight||'',reps:e.reps||''};
   });
   return best||{weight:'',reps:''};
 }
 
-function openLogModal(day){
-  curDay=day; logState={};
-  DAYS[day].exercises.forEach(ex=>{
-    const lw=lastLoggedValues(ex.id);
-    logState[ex.id]={done:false,weight:lw.weight,reps:lw.reps,hitTarget:false};
+// Fill the modal for curDay on logDate: an existing session is loaded for editing,
+// otherwise the rows pre-fill from history.
+function loadLogState(){
+  logState={};
+  const existing=workoutLogs.find(l=>l.date===logDate&&l.day===curDay);
+  DAYS[curDay].exercises.forEach(ex=>{
+    const prev=existing&&(existing.exercises||[]).find(e=>e.id===ex.id);
+    if(prev){
+      logState[ex.id]={done:!!prev.done,weight:prev.weight||'',reps:prev.reps||'',hitTarget:!!prev.hitTarget};
+    }else{
+      const lw=lastLoggedValues(ex.id,logDate);
+      logState[ex.id]={done:false,weight:lw.weight,reps:lw.reps,hitTarget:false};
+    }
   });
+  document.getElementById('logNotes').value=existing?(existing.notes||''):'';
+  return !!existing;
+}
+
+function renderLogDateNav(){
+  const t=todayStr();
+  const editing=workoutLogs.some(l=>l.date===logDate&&l.day===curDay);
+  document.getElementById('logModalDate').innerHTML=`
+    <div class="log-date-nav">
+      <button class="log-date-step" onclick="stepLogDate(-1)" aria-label="Previous day">‹</button>
+      <input class="log-date-input" id="logDateInput" type="date" value="${logDate}" max="${t}" onchange="setLogDate(this.value)">
+      <button class="log-date-step" onclick="stepLogDate(1)" ${logDate>=t?'disabled':''} aria-label="Next day">›</button>
+    </div>
+    <div class="log-date-hint ${editing?'editing':''}">${
+      editing ? '✎ Editing the session already logged for '+dateLabel(logDate)
+              : dateLabel(logDate)+' · previous weights pre-filled'
+    }</div>`;
+}
+
+function setLogDate(v){
+  if(!v) return;
+  const t=todayStr();
+  logDate=v>t?t:v;
+  loadLogState();
+  renderLogDateNav(); renderLogExs(); updateLogProgress();
+}
+function stepLogDate(delta){ setLogDate(shiftDate(logDate,delta)); }
+
+function openLogModal(day,date){
+  curDay=day;
+  const t=todayStr();
+  logDate=date&&date<=t?date:t;
+  loadLogState();
   document.getElementById('logModalTitle').textContent='LOG DAY '+day;
-  document.getElementById('logModalDate').textContent=todayStr()+' · Previous weights & reps pre-filled';
-  document.getElementById('logNotes').value='';
+  renderLogDateNav();
   renderLogExs(); updateLogProgress();
   document.getElementById('logModal').classList.add('open');
 }
@@ -979,9 +1041,9 @@ function updateLogProgress(){
   document.getElementById('logProgressText').textContent=done+' / '+exs.length+' completed';
 }
 function saveSession(){
-  const today=todayStr();
+  const date=logDate||todayStr();
   const entry={
-    date:today, day:curDay, dayName:DAYS[curDay].name,
+    date, day:curDay, dayName:DAYS[curDay].name,
     exercises:DAYS[curDay].exercises.map(ex=>({
       id:ex.id, name:ex.name, sets:ex.sets,
       done:logState[ex.id].done, weight:logState[ex.id].weight, reps:logState[ex.id].reps, w:ex.w, hitTarget:logState[ex.id].hitTarget
@@ -989,17 +1051,31 @@ function saveSession(){
     notes:document.getElementById('logNotes').value,
     _version:4
   };
-  const idx=workoutLogs.findIndex(l=>l.date===today&&l.day===curDay);
+  const idx=workoutLogs.findIndex(l=>l.date===date&&l.day===curDay);
   if(idx>=0) workoutLogs[idx]=entry; else workoutLogs.push(entry);
+  workoutLogs.sort((a,b)=>a.date.localeCompare(b.date));   // backdating can insert out of order
   save('logs',workoutLogs);
   closeLogModal(); renderCalendar(); renderTodayTrainingSessions();
-  showToast('Session saved ✓');
+  // Keep the calendar detail in step when saving from there
+  if(selectedDay&&document.getElementById('logview').classList.contains('active')) showDayLog(selectedDay);
+  showToast(date===todayStr()?'Session saved ✓':'Saved to '+dateLabel(date)+' ✓');
 }
 
 // ════════════════════════════════════════
 // NUTRITION TRACKER
 // ════════════════════════════════════════
-function todayStr(){ return new Date().toISOString().split('T')[0]; }
+// Local calendar date, never UTC — toISOString() rolls over at the wrong moment
+// and would file a late-evening session under tomorrow (or yesterday, west of UTC).
+function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayStr(){ return ymd(new Date()); }
+function shiftDate(ds,delta){ const d=new Date(ds+'T00:00:00'); d.setDate(d.getDate()+delta); return ymd(d); }
+function dateLabel(ds){
+  const t=todayStr();
+  if(ds===t) return 'Today';
+  if(ds===shiftDate(t,-1)) return 'Yesterday';
+  const d=new Date(ds+'T00:00:00');
+  return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+' '+d.getDate()+' '+MON_ABBR[d.getMonth()];
+}
 
 function renderNutTracker(){
   const today=todayStr();
@@ -1215,10 +1291,22 @@ function showDayLog(ds){
   const wts=weightLogs.filter(l=>l.date===ds);
   const nuts=nutLogs[ds]||[];
   const c=document.getElementById('selectedDayLog');
-  if(!logs.length&&!wts.length&&!nuts.length){c.innerHTML=`<div style="font-size:13px;color:var(--muted);padding:10px 0;">${ds}: no entries recorded.</div>`;return;}
+
+  // Entry point for logging a day you forgot: offer whichever sessions aren't
+  // recorded yet on this date. Future dates get nothing.
+  const missing=ds<=todayStr()?['A','B','C'].filter(d=>!logs.some(l=>l.day===d)):[];
+  const logBtns=missing.length?`<div class="day-log-actions">
+      <div class="day-log-label">Log a session for ${dateLabel(ds)}</div>
+      <div class="day-log-row">${missing.map(d=>`<button class="day-log-btn" onclick="openLogModal('${d}','${ds}')">+ DAY ${d}</button>`).join('')}</div>
+    </div>`:'';
+
+  if(!logs.length&&!wts.length&&!nuts.length){
+    c.innerHTML=`<div style="font-size:13px;color:var(--muted);padding:10px 0;">${ds}: no entries recorded.</div>`+logBtns;
+    c.scrollIntoView({behavior:'smooth',block:'nearest'}); return;
+  }
   let h=`<div style="margin:12px 0 16px;padding-top:12px;border-top:1px solid var(--border);"><div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);margin-bottom:10px;">${ds}</div>`;
   logs.forEach(log=>{
-    h+=`<div class="log-entry"><div class="log-entry-header"><div><div class="log-entry-date">${log.dayName||log.day}</div></div></div>`;
+    h+=`<div class="log-entry"><div class="log-entry-header"><div><div class="log-entry-date">${log.dayName||log.day}</div></div><button class="log-entry-edit" onclick="openLogModal('${log.day}','${ds}')">✎ EDIT</button></div>`;
     log.exercises.forEach(ex=>{h+=`<div class="log-ex-item"><span class="${ex.done?'log-ex-done':'log-ex-skip'}">${ex.done?'✓':'–'} ${ex.name}</span><span class="log-w-badge">${ex.w&&ex.weight?ex.weight+' kg'+repsBadge(ex):ex.sets}${ex.hitTarget?' <span style="color:var(--accent2)">★</span>':''}</span></div>`;});
     if(log.notes) h+=`<div style="margin-top:8px;font-size:12px;color:#c4c4bc;font-style:italic;">"${log.notes}"</div>`;
     h+='</div>';
@@ -1229,7 +1317,7 @@ function showDayLog(ds){
     h+=`<div style="font-size:13px;padding:8px 0;color:var(--text);">🥗 <span style="color:var(--muted)">Nutrition:</span> <strong style="color:#4a9eff">${Math.round(tot.kcal)} kcal</strong> <span style="color:var(--text)">·</span> <strong style="color:var(--text)">${Math.round(tot.prot)}g protein</strong> <span style="color:var(--text)">· ${nuts.length} item${nuts.length>1?'s':''}</span></div>`;
     h+='<div style="padding-left:20px;">'+nuts.map(n=>`<div style="font-size:12px;color:var(--text);padding:2px 0;">· ${n.name}${n.kcal?' <span style=\'color:var(--muted)\'>('+ n.kcal+' kcal)</span>':''}</div>`).join('')+'</div>';
   }
-  h+='</div>'; c.innerHTML=h;
+  h+='</div>'; c.innerHTML=h+logBtns;
   c.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
